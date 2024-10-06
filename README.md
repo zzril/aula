@@ -13,6 +13,6 @@ Usage
 -----
 ```sh
 make
-./bin/aula <path to aula source file>
+./bin/aula path_to_aula_source_file
 ```
 
