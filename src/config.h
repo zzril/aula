@@ -1,0 +1,21 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+// --------
+
+#include <stddef.h>
+
+// --------
+
+#define SAMPLE_FRAMES_PER_SECOND 48000
+#define BEATS_PER_MINUTE 72.0
+#define QUARTER_NOTES_PER_BAR 4
+
+#define BEATS_PER_SECOND (BEATS_PER_MINUTE / 60.0)
+#define QUARTER_NOTE_LENGTH_IN_SECONDS (1.0 / BEATS_PER_SECOND)
+#define BAR_LENGTH_IN_SECONDS ((unsigned int) (QUARTER_NOTES_PER_BAR * QUARTER_NOTE_LENGTH_IN_SECONDS))
+#define SAMPLE_FRAMES_PER_BAR ((size_t) (QUARTER_NOTES_PER_BAR * (SAMPLE_FRAMES_PER_SECOND / BEATS_PER_SECOND)))
+
+// --------
+#endif
+
+
