@@ -33,6 +33,8 @@ void Player_destroy_at(Player* player);
 
 int Player_play_bar(Player* player);
 
+void Player_finish(Player* player);
+
 // --------
 #endif
 

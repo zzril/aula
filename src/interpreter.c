@@ -187,6 +187,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 	Token_destroy_at(&token);
 	Instrument_destroy_at(&instrument);
+	Player_finish(&player);
 	Player_destroy_at(&player);
 
 	return status;

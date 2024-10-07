@@ -122,13 +122,6 @@ void Player_destroy_at(Player* player) {
 		return;
 	}
 
-	if(player->device) {
-		Uint32 queued_audio_size;
-		while((queued_audio_size = SDL_GetQueuedAudioSize(player->device)) != 0) {
-			sleep(1);
-		}
-	}
-
 	shutdown(player, 0);
 
 	return;
@@ -156,5 +149,15 @@ int Player_play_bar(Player* player) {
 	}
 
 	return 0;
+}
+
+void Player_finish(Player* player) {
+
+	if(player->device) {
+		Uint32 queued_audio_size;
+		while((queued_audio_size = SDL_GetQueuedAudioSize(player->device)) != 0) {
+			sleep(1);
+		}
+	}
 }
 
