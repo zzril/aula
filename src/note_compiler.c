@@ -43,6 +43,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 	int half = 0;
 	int pitch = 0;
 	int length = -2;
+	bool note_finished = false;
 
 	char symbol = compiler->symbol;
 	int c = peek(compiler);
@@ -53,7 +54,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 
 	if(!compiler->finished) {
 
-		switch((char) c) {
+		switch(c) {
 
 			case '#':
 				advance(compiler);
@@ -66,6 +67,26 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 				break;
 
 			default:
+				break;
+		}
+	}
+
+	while(!note_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+
+		switch(c) {
+
+			case 'o':
+				advance(compiler);
+				length++;
+				continue;
+
+			case '^':
+				advance(compiler);
+				length--;
+				continue;
+
+			default:
+				note_finished = true;
 				break;
 		}
 	}
