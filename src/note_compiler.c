@@ -60,6 +60,11 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 				half++;
 				break;
 
+			case 'b':
+				advance(compiler);
+				half--;
+				break;
+
 			default:
 				break;
 		}
