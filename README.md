@@ -11,8 +11,20 @@ Features are also extremely limited for now. We can currently play all (half) no
 
 Usage
 -----
+
+To compile the interpreter, simply type:  
 ```sh
 make
-./bin/aula path_to_aula_source_file
+```
+
+An aula file could currently look for example like this:  
+```
+|| D A B F# | G D G A ||
+```
+
+To play a file, start the interpreter and give the filename as an argument:  
+```sh
+make
+./bin/aula path_to_aula_file
 ```
 
