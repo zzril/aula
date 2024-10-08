@@ -13,7 +13,7 @@ int Note_musical_init_at(Note* note, char symbol, int half) {
 		return rv;
 	}
 
-	Note_init_at(note, pitch);
+	Note_init_at(note, pitch, -2);
 	return 0;
 }
 
