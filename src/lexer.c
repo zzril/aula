@@ -53,10 +53,11 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 	while((c = advance(lexer)) != EOF) {
 
 		if(lexer->symbol == endchar) {
+			(*buffer)[*length] = '\0';
 			return 0;
 		}
 
-		if(*length == capacity) {
+		if(*length >= capacity - 1) {
 
 			char* new_buffer;
 
@@ -73,6 +74,8 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 		(*buffer)[*length] = lexer->symbol;
 		(*length)++;
 	}
+
+	(*buffer)[*length] = '\0';
 
 	lexer->finished = true;
 	lexer->error = true;
@@ -170,7 +173,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					return 0;
 				}
 
-				status = fill_buffer_until(lexer, &buffer, 8, &length, '|');
+				status = fill_buffer_until(lexer, &buffer, 16, &length, '|');
 				if(status != 0) {
 					return status;
 				}
