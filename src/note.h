@@ -21,7 +21,7 @@ struct Note {
 
 // --------
 
-void Note_init_at(Note* note, int pitch);
+void Note_init_at(Note* note, int pitch, int length);
 
 float Note_get_frequency(const Note* note);
 float Note_get_absolute_length(const Note* note);

@@ -9,8 +9,6 @@
 
 static int advance(NoteCompiler* compiler);
 
-static bool is_ignorable(char symbol);
-
 static int peek(NoteCompiler* compiler);
 
 static int finish_note(NoteCompiler* compiler, Note* note);
@@ -30,15 +28,6 @@ static int advance(NoteCompiler* compiler) {
 	return (char) (compiler->symbol);
 }
 
-static bool is_ignorable(char symbol) {
-	switch(symbol) {
-		case ' ':
-			return true;
-		default:
-			return false;
-	}
-}
-
 static int peek(NoteCompiler* compiler) {
 
 	if(compiler->position >= compiler->bar_length) {
@@ -50,8 +39,13 @@ static int peek(NoteCompiler* compiler) {
 
 static int finish_note(NoteCompiler* compiler, Note* note) {
 
-	char symbol = compiler->symbol;
+	int status = 0;
 	int half = 0;
+	int pitch = 0;
+	int length = -2;
+	bool note_finished = false;
+
+	char symbol = compiler->symbol;
 	int c = peek(compiler);
 
 	if(c < 0) {
@@ -60,11 +54,16 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 
 	if(!compiler->finished) {
 
-		switch((char) c) {
+		switch(c) {
 
 			case '#':
 				advance(compiler);
 				half++;
+				break;
+
+			case 'b':
+				advance(compiler);
+				half--;
 				break;
 
 			default:
@@ -72,7 +71,34 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		}
 	}
 
-	return Note_musical_init_at(note, symbol, half);
+	while(!note_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+
+		switch(c) {
+
+			case 'o':
+				advance(compiler);
+				length++;
+				continue;
+
+			case '^':
+				advance(compiler);
+				length--;
+				continue;
+
+			default:
+				note_finished = true;
+				break;
+		}
+	}
+
+	status = Convert_musical_to_pitch(symbol, half, &pitch);
+	if(status != 0) {
+		return status;
+	}
+
+	Note_init_at(note, pitch, length);
+
+	return 0;
 }
 
 // --------
@@ -80,6 +106,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
 
 	compiler->bar = bar;
+	compiler->state = NOTE_COMPILER_STATE_EXPECTING_NOTE;
 	compiler->bar_length = 0;
 	compiler->position = 0;
 	compiler->symbol = '\0';
@@ -97,36 +124,48 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 	NoteCompiler* comp = (NoteCompiler*) compiler;
 	int status = 0;
 
-	memset(note, 0, sizeof(Note));
-
 	if((comp == NULL || note == NULL) || (comp->finished | comp->error)) {
 		return 1;
 	}
 
-	do {
-		advance(comp);
-	}
-	while(!comp->finished && is_ignorable(comp->symbol));
+	memset(note, 0, sizeof(Note));
 
-	if(comp->finished) {
-		return 1;
+	while(advance(comp) != -1) {
+
+		switch(comp->state) {
+
+			case NOTE_COMPILER_STATE_EXPECTING_NOTE:
+
+				switch(comp->symbol) {
+
+					case ' ':
+						continue;
+
+					case 'A':
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'E':
+					case 'F':
+					case 'G':
+						status = finish_note(comp, note);
+						comp->error = status != 0;
+						return status;
+
+					default:
+						comp->error = true;
+						comp->finished = true;
+						return 1;
+				}
+			default:
+				comp->error = true;
+				comp->finished = true;
+				return 1;
+		}
 	}
 
-	switch(comp->symbol) {
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-		case 'G':
-			status = finish_note(comp, note);
-			comp->error = status != 0;
-			return status;
-		default:
-			comp->error = true;
-			comp->finished = true;
-			return 1;
-	}
+	comp->error = true;
+	comp->finished = true;
+	return 1;
 }
 

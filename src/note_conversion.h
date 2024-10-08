@@ -6,8 +6,6 @@
 
 // --------
 
-int Note_musical_init_at(Note* note, char symbol, int half);
-
 int Convert_musical_to_pitch(char symbol, int half, int* pitch);
 
 // --------

@@ -17,8 +17,14 @@ typedef struct NoteCompiler NoteCompiler;
 
 // --------
 
+typedef enum NoteCompilerState {
+	NOTE_COMPILER_STATE_EXPECTING_NOTE = 0,
+	NUM_NOTE_COMPILER_STATES,
+} NoteCompilerState;
+
 struct NoteCompiler {
 	char* bar;
+	NoteCompilerState state;
 	size_t bar_length;
 	size_t position;
 	char symbol;

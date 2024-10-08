@@ -5,9 +5,9 @@
 
 // --------
 
-void Note_init_at(Note* note, int pitch) {
+void Note_init_at(Note* note, int pitch, int length) {
 	note->pitch = pitch;
-	note->length = -2;
+	note->length = length;
 }
 
 float Note_get_frequency(const Note* note) {
