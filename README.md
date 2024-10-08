@@ -26,6 +26,6 @@ An aula file could currently look for example like this:
 
 To play a file, start the interpreter and give the filename as an argument:  
 ```sh
-./bin/aula .examples/pachelbel.aula
+./bin/aula examples/pachelbel.aula
 ```
 
