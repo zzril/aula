@@ -170,7 +170,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					return 0;
 				}
 
-				status = fill_buffer_until(lexer, &buffer, 8, &length, '|');
+				status = fill_buffer_until(lexer, &buffer, 16, &length, '|');
 				if(status != 0) {
 					return status;
 				}
