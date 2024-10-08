@@ -39,8 +39,12 @@ static int peek(NoteCompiler* compiler) {
 
 static int finish_note(NoteCompiler* compiler, Note* note) {
 
-	char symbol = compiler->symbol;
+	int status = 0;
 	int half = 0;
+	int pitch = 0;
+	int length = -2;
+
+	char symbol = compiler->symbol;
 	int c = peek(compiler);
 
 	if(c < 0) {
@@ -61,7 +65,14 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		}
 	}
 
-	return Note_musical_init_at(note, symbol, half);
+	status = Convert_musical_to_pitch(symbol, half, &pitch);
+	if(status != 0) {
+		return status;
+	}
+
+	Note_init_at(note, pitch, length);
+
+	return 0;
 }
 
 // --------
