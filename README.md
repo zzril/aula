@@ -27,7 +27,7 @@ Usage
 
 To play a file, start the interpreter and give the filename as an argument:  
 ```sh
-./bin/aula examples/pachelbel.aula
+./bin/aula examples/canon-in-d.aula
 ```
 
 An aula file could currently look for example like this:  
