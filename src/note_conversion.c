@@ -4,7 +4,7 @@
 
 // --------
 
-int Convert_musical_to_pitch(char symbol, int8_t half, int8_t* pitch) {
+int Convert_musical_to_pitch(char symbol, int8_t octave, int8_t half, int8_t* pitch) {
 
 	if(pitch == NULL) {
 		return 1;
@@ -41,7 +41,9 @@ int Convert_musical_to_pitch(char symbol, int8_t half, int8_t* pitch) {
 			return 1;
 	}
 
+	*pitch += 12 * octave;
 	*pitch += half;
+
 	return 0;
 }
 

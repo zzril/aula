@@ -1,39 +1,39 @@
 aula
 ====
 
-![](https://github.com/zzril/aula/actions/workflows/c-cpp.yml/badge.svg)
-
 Audio Language
+
+![](https://github.com/zzril/aula/actions/workflows/c-cpp.yml/badge.svg)
 
 This is my attempt of creating an audio programming language from scratch, using only the C standard lib and SDL2.
 
-The interpreter is currently working in the sense that we can pass it an aula source file and it will play the notes listed in the file.  
-However, pretty much everything else is missing atm. There is no language documentation yet, no examples, and error reporting is as rudimentary as it gets.  
-Features are also extremely limited for now. We can currently play all (half) notes from C4 to B4. And the sound is not particularly interesting we're merely emitting a simple sine wave.
+As this is still pretty new, don't expect too many features yet. For now, it's possible to write a note file in an ABC-like notation and have that played by the interpreter.  
+Sound is just a simple sine wave so far. A feature to define more interesting sounds, as well as multiple instruments, is planned.  
+Documentation is almost nonexistent at this point, and error reporting is... let's call it "basic".  
+Needless to say, the (nonexistent) language specification should not be considered anything close to "stable".
+
+Help is appreciated! More specific information on how to contribute will follow.
 
 Build
 -----
 
-### Install dependencies
-
-On Debian-based Linux distros:  
+First, you need to install the dependencies.  
+On Debian-based Linux distros that would be achieved by:  
 ```sh
 sudo apt install libsdl2-dev
 ```
 
-### Compile
-
+Compiling is done by invoking `make`:  
 ```sh
 make
 ```
 
-### Test
-
+A test target also exists:  
 ```sh
 make check
 ```
 
-When testing locally, running multiple tests in parallel via the `-j` option is not recommended as their sound will overlap.
+When testing locally, running multiple tests in parallel via the `-j` option is not recommended as the sound will overlap.
 
 Usage
 -----
@@ -45,7 +45,7 @@ To play a file, start the interpreter and give the filename as an argument:
 
 An aula file could currently look for example like this:  
 ```
-|| D A B F# | G D G A ||
+|| D+ A B F# | G D G A ||
 ```
 
 (See more examples in the `examples` folder.)
