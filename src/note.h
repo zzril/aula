@@ -2,6 +2,7 @@
 #define NOTE_H
 // --------
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -22,12 +23,15 @@ typedef struct Note Note;
 struct Note {
 	int8_t pitch;
 	int8_t length;
+	bool is_rest;
 };
 
 // --------
 
 void Note_init_at(Note* note, int8_t pitch, int8_t length);
+void Pause_init_at(Note* note, int8_t length);
 
+bool Note_is_rest(const Note* note);
 float Note_get_frequency(const Note* note);
 float Note_get_absolute_length(const Note* note);
 size_t Note_get_length_in_samples(const Note* note);

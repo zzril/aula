@@ -6,11 +6,33 @@
 // --------
 
 void Note_init_at(Note* note, int8_t pitch, int8_t length) {
+
 	note->pitch = pitch;
 	note->length = length;
+	note->is_rest = false;
+
+	return;
+}
+
+void Pause_init_at(Note* note, int8_t length) {
+
+	note->pitch = INT8_MIN;
+	note->length = length;
+	note->is_rest = true;
+
+	return;
+}
+
+bool Note_is_rest(const Note* note) {
+	return note->is_rest;
 }
 
 float Note_get_frequency(const Note* note) {
+
+	if(note->is_rest) {
+		return 0;
+	}
+
 	return BASE_FREQUENCY * (pow(2, (note->pitch) / 12.0));
 }
 
