@@ -40,9 +40,11 @@ static int peek(NoteCompiler* compiler) {
 static int finish_note(NoteCompiler* compiler, Note* note) {
 
 	int status = 0;
+	int8_t octave = 0;
 	int8_t half = 0;
 	int8_t pitch = 0;
 	int8_t length = -2;
+	bool frequence_parsing_finished = false;
 	bool note_finished = false;
 
 	char symbol = compiler->symbol;
@@ -53,27 +55,50 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		compiler->finished = true;
 	}
 
-	if(!compiler->finished && !rest) {
+	if(!rest) {
 
-		switch(c) {
+		if(!compiler->finished) {
 
-			case ' ':
-			case '\t':
-				note_finished = true;
-				break;
+			switch(c) {
 
-			case '#':
-				advance(compiler);
-				half++;
-				break;
+				case ' ':
+				case '\t':
+					note_finished = true;
+					break;
 
-			case 'b':
-				advance(compiler);
-				half--;
-				break;
+				case '#':
+					advance(compiler);
+					half++;
+					break;
 
-			default:
-				break;
+				case 'b':
+					advance(compiler);
+					half--;
+					break;
+
+				default:
+					break;
+			}
+		}
+
+		while(!frequence_parsing_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+
+			switch(c) {
+
+				case '+':
+					advance(compiler);
+					octave++;
+					break;
+
+				case '-':
+					advance(compiler);
+					octave--;
+					break;
+
+				default:
+					frequence_parsing_finished = true;
+					break;
+			}
 		}
 	}
 
@@ -102,7 +127,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		return 0;
 	}
 
-	status = Convert_musical_to_pitch(symbol, half, &pitch);
+	status = Convert_musical_to_pitch(symbol,octave, half, &pitch);
 	if(status != 0) {
 		return status;
 	}
