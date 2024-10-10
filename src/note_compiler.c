@@ -46,13 +46,14 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 	bool note_finished = false;
 
 	char symbol = compiler->symbol;
+	bool rest = compiler->symbol == ';';
 	int c = peek(compiler);
 
 	if(c < 0) {
 		compiler->finished = true;
 	}
 
-	if(!compiler->finished) {
+	if(!compiler->finished && !rest) {
 
 		switch(c) {
 
@@ -94,6 +95,11 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 				note_finished = true;
 				break;
 		}
+	}
+
+	if(rest) {
+		Pause_init_at(note, length);
+		return 0;
 	}
 
 	status = Convert_musical_to_pitch(symbol, half, &pitch);
@@ -154,6 +160,7 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 					case 'E':
 					case 'F':
 					case 'G':
+					case ';':
 						status = finish_note(comp, note);
 						comp->error = status != 0;
 						return status;

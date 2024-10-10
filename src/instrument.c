@@ -39,7 +39,9 @@ static int add_note(Instrument* instrument, Note* note) {
 		overflow = true;
 	}
 
-	add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, SAMPLE_FRAMES_PER_SECOND, 1, Note_get_frequency(note), 0);
+	if(!Note_is_rest(note)) {
+		add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, SAMPLE_FRAMES_PER_SECOND, 1, Note_get_frequency(note), 0);
+	}
 
 	instrument->buffer_position += samples_to_write;
 
