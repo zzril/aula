@@ -40,9 +40,9 @@ static int peek(NoteCompiler* compiler) {
 static int finish_note(NoteCompiler* compiler, Note* note) {
 
 	int status = 0;
-	int half = 0;
-	int pitch = 0;
-	int length = -2;
+	int8_t half = 0;
+	int8_t pitch = 0;
+	int8_t length = -2;
 	bool note_finished = false;
 
 	char symbol = compiler->symbol;
