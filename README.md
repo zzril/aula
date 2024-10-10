@@ -12,22 +12,33 @@ Features are also extremely limited for now. We can currently play all (half) no
 Build
 -----
 
-First, install the dependencies. On Debian-based Linux distros, this will do:  
+### Install dependencies
+
+On Debian-based Linux distros:  
 ```sh
 sudo apt install libsdl2-dev
 ```
 
-Then compile the interpreter by typing:  
+### Compile
+
 ```sh
 make
 ```
+
+### Test
+
+```sh
+make check
+```
+
+When testing locally, running multiple tests in parallel via the `-j` option is not recommended as their sound will overlap.
 
 Usage
 -----
 
 To play a file, start the interpreter and give the filename as an argument:  
 ```sh
-./bin/aula examples/pachelbel.aula
+./bin/aula examples/canon-in-d.aula
 ```
 
 An aula file could currently look for example like this:  
