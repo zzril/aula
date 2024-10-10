@@ -56,6 +56,11 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 
 		switch(c) {
 
+			case ' ':
+			case '\t':
+				note_finished = true;
+				break;
+
 			case '#':
 				advance(compiler);
 				half++;
@@ -139,6 +144,7 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 				switch(comp->symbol) {
 
 					case ' ':
+					case '\t':
 						continue;
 
 					case 'A':
