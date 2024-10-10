@@ -1,6 +1,8 @@
 aula
 ====
 
+![](https://github.com/zzril/aula/actions/workflows/c-cpp.yml/badge.svg)
+
 Audio Language
 
 This is my attempt of creating an audio programming language from scratch, using only the C standard lib and SDL2.
