@@ -45,7 +45,7 @@ To play a file, start the interpreter and give the filename as an argument:
 
 An aula file could currently look for example like this:  
 ```
-|| D A B F# | G D G A ||
+|| D+ A B F# | G D G A ||
 ```
 
 (See more examples in the `examples` folder.)
