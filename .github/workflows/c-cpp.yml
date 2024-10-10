@@ -13,8 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
     - uses: actions/checkout@v4
-    - name: install libsdl2-dev
+
+    - name: install dependencies
       run: sudo apt-get install -y libsdl2-dev
-    - name: make
+    - name: compile
       run: make
+    - name: run tests
+      run: make check
