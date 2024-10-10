@@ -31,7 +31,7 @@ make
 make check
 ```
 
-When testing locally, specifying the `-j` option to run multiple tests in parallel is not recommended as their sound will overlap.
+When testing locally, running multiple tests in parallel via the `-j` option is not recommended as their sound will overlap.
 
 Usage
 -----
