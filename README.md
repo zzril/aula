@@ -8,10 +8,8 @@ Audio Language
 This is my attempt of creating an audio programming language from scratch, using only the C standard lib and SDL2.
 
 As this is still pretty new, don't expect too many features yet. For now, it's possible to write a note file in an ABC-like notation and have that played by the interpreter.  
-Sound is just a simple sine wave so far. A feature to define more interesting sounds, as well as multiple instruments, is planned.
-
-Documentation is almost nonexistent at this point, and error reporting is... let's call it "basic".
-
+Sound is just a simple sine wave so far. A feature to define more interesting sounds, as well as multiple instruments, is planned.  
+Documentation is almost nonexistent at this point, and error reporting is... let's call it "basic".  
 Needless to say, the (nonexistent) language specification should not be considered anything close to "stable".
 
 Help is appreciated! More specific information on how to contribute will follow.
