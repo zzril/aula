@@ -30,7 +30,7 @@ all: $(BIN)
 
 .PHONY: clean
 clean:
-	rm -r $(BLD_DIR) || true
+	rm -r $(BLD_DIR) $(BIN_DIR) || true
 
 .PHONY: check
 check: $(TESTS)
