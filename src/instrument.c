@@ -97,7 +97,7 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 
 		if(rv != 0) {
 			if(rv == 1) {
-				fputs("WARNING: Instrument buffer full, cutting off remaining note(s)", stderr);
+				fputs("WARNING: Instrument buffer full, cutting off remaining note(s)\n", stderr);
 				return 0;
 			}
 			else {
