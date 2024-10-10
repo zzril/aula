@@ -12,15 +12,26 @@ Features are also extremely limited for now. We can currently play all (half) no
 Build
 -----
 
-First, install the dependencies. On Debian-based Linux distros, this will do:  
+### Install dependencies
+
+On Debian-based Linux distros:  
 ```sh
 sudo apt install libsdl2-dev
 ```
 
-Then compile the interpreter by typing:  
+### Compile
+
 ```sh
 make
 ```
+
+### Test
+
+```sh
+make check
+```
+
+When testing locally, specifying the `-j` option to run multiple tests in parallel is not recommended as their sound will overlap.
 
 Usage
 -----
