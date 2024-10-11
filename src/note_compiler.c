@@ -175,6 +175,8 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 				switch(comp->symbol) {
 
 					case ' ':
+					case '\n':
+					case '\r':
 					case '\t':
 						continue;
 

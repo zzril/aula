@@ -19,6 +19,7 @@ typedef enum TokenType {
 	TOKEN_BAR,
 	TOKEN_TRACK_START,
 	TOKEN_TRACK_END,
+	TOKEN_COMMENT,
 	NUM_TOKEN_TYPES,
 } TokenType;
 

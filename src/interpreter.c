@@ -99,6 +99,10 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 	while(!interpreter->finished && destroy_token(&token) && (status = Lexer_get_next_token(&lexer, &token)) == 0 && !lexer.finished) {
 
+		if(token.type == TOKEN_COMMENT) {
+			continue;
+		}
+
 		switch(interpreter->state) {
 
 			case INTERPRETER_STATE_EXPECTING_TRACK:

@@ -9,7 +9,7 @@
 
 static int advance(Lexer* lexer);
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar);
+static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
 
 // --------
 
@@ -32,7 +32,7 @@ static int advance(Lexer* lexer) {
 	return c;
 }
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar) {
+static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first) {
 
 	int c;
 	size_t capacity = initial_capacity;
@@ -47,8 +47,10 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 		return -1;
 	}
 
-	(*buffer)[*length] = lexer->symbol;
-	(*length)++;
+	if(!skip_first) {
+		(*buffer)[*length] = lexer->symbol;
+		(*length)++;
+	}
 
 	while((c = advance(lexer)) != EOF) {
 
@@ -147,6 +149,10 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						lexer->state = LEXER_STATE_EXPECTING_TRACK_START;
 						continue;
 
+					case '/':
+						lexer->state = LEXER_STATE_EXPECTING_COMMENT;
+						continue;
+
 					default:
 						lexer->error = true;
 						lexer->finished = true;
@@ -167,13 +173,28 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 			case LEXER_STATE_EXPECTING_BAR:
 
-				if(lexer->symbol == '|') {
-					lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
-					Token_init_at(token, TOKEN_TRACK_END, lexer->line, lexer->col);
-					return 0;
-				}
+				switch(lexer->symbol) {
 
-				status = fill_buffer_until(lexer, &buffer, 16, &length, '|');
+					case ' ':
+					case '\n':
+					case '\r':
+					case '\t':
+						continue;
+
+					case '|':
+						lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+						Token_init_at(token, TOKEN_TRACK_END, lexer->line, lexer->col);
+						return 0;
+
+					case '/':
+						lexer->state = LEXER_STATE_EXPECTING_BAR_COMMENT;
+						continue;
+
+					default:
+						break;
+					}
+
+				status = fill_buffer_until(lexer, &buffer, 16, &length, '|', false);
 				if(status != 0) {
 					return status;
 				}
@@ -186,10 +207,32 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 				return 0;
 
+			case LEXER_STATE_EXPECTING_COMMENT:
+			case LEXER_STATE_EXPECTING_BAR_COMMENT:
+
+				if(!(lexer->symbol == '/')) {
+					return 5;
+				}
+
+				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
+				if(status != 0) {
+					return status;
+				}
+
+				Token_init_at(token, TOKEN_COMMENT, lexer->line, lexer->col - length);
+				Token_set_content(token, buffer, length);
+
+				buffer = NULL;
+				length = 0;
+
+				lexer->state = lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? LEXER_STATE_EXPECTING_BAR: LEXER_STATE_EXPECTING_NEW_TOKEN;
+
+				return 0;
+
 			default:
 				lexer->error = true;
 				lexer->finished = true;
-				return -3;
+				return 6;
 		}
 	}
 
