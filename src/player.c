@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_error.h>
+#include <SDL2/SDL_hints.h>
 
 #include "config.h"
 #include "player.h"
@@ -69,6 +70,8 @@ int Player_init_at(Player* player) {
 		fputs("WARNING: Ignoring attempt to initialize multiple Players.\n", stderr);
 		return 2;
 	}
+
+	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 
 	int status = SDL_Init(SDL_INIT_AUDIO);
 	if(status < 0) {
