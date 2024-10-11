@@ -14,7 +14,7 @@ void Note_init_at(Note* note, int8_t pitch, int8_t length) {
 	return;
 }
 
-void Pause_init_at(Note* note, int8_t length) {
+void Note_init_rest_at(Note* note, int8_t length) {
 
 	note->pitch = INT8_MIN;
 	note->length = length;

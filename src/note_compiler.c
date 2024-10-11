@@ -123,7 +123,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 	}
 
 	if(rest) {
-		Pause_init_at(note, length);
+		Note_init_rest_at(note, length);
 		return 0;
 	}
 

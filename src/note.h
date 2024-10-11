@@ -29,7 +29,7 @@ struct Note {
 // --------
 
 void Note_init_at(Note* note, int8_t pitch, int8_t length);
-void Pause_init_at(Note* note, int8_t length);
+void Note_init_rest_at(Note* note, int8_t length);
 
 bool Note_is_rest(const Note* note);
 float Note_get_frequency(const Note* note);
