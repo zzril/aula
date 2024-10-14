@@ -54,7 +54,7 @@ static int play_bar_token(Player* player, Instrument* instrument, Token* bar_tok
 void Interpreter_init_at(Interpreter* interpreter) {
 
 	interpreter->filename = "";
-	interpreter->state = INTERPRETER_STATE_EXPECTING_TRACK;
+	interpreter->state = INTERPRETER_STATE_EXPECTING_KEYWORD;
 	interpreter->error_state = INTERPRETER_ERROR_STATE_UNKNOWN_ERROR;
 	interpreter->finished = false;
 	interpreter->error = false;
@@ -105,6 +105,21 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		}
 
 		switch(interpreter->state) {
+
+			case INTERPRETER_STATE_EXPECTING_KEYWORD:
+
+				switch(token.type) {
+
+					case TOKEN_KEYWORD_TRACK:
+						interpreter->state = INTERPRETER_STATE_EXPECTING_TRACK;
+						continue;
+
+					default:
+						interpreter->finished = true;
+						interpreter->error = true;
+						interpreter->error_state = INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN;
+						continue;
+				}
 
 			case INTERPRETER_STATE_EXPECTING_TRACK:
 
