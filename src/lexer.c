@@ -12,6 +12,8 @@ static int advance(Lexer* lexer);
 
 static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
 
+static int verify_string(Lexer* lexer, const char* remaining, size_t length, bool skip_first);
+
 // --------
 
 static int advance(Lexer* lexer) {
@@ -86,6 +88,30 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 	return ERROR_CODE_UNEXPECTED_EOF;
 }
 
+static int verify_string(Lexer* lexer, const char* remaining, size_t length, bool skip_first) {
+
+	int c;
+	size_t index = 0;
+
+	if(!skip_first) {
+
+		if(lexer->symbol != remaining[index]) {
+			return 1;
+		}
+		index++;
+	}
+
+	while(index < length && (c = advance(lexer)) != EOF) {
+
+		if(lexer->symbol != remaining[index]) {
+			return 1;
+		}
+		index++;
+	}
+
+	return index == length? 0: 2;
+}
+
 // --------
 
 int Lexer_init_at(Lexer* lexer, FILE* stream) {
@@ -154,11 +180,39 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						lexer->state = LEXER_STATE_EXPECTING_COMMENT;
 						continue;
 
+					case 'm':
+						lexer->state = LEXER_STATE_EXPECTING_KEYWORD_META;
+						continue;
+					case 't':
+						lexer->state = LEXER_STATE_EXPECTING_KEYWORD_TRACK;
+						continue;
+
 					default:
 						lexer->error = true;
 						lexer->finished = true;
 						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
+
+			case LEXER_STATE_EXPECTING_KEYWORD_META:
+
+				if(verify_string(lexer, "eta:", 4, false) != 0) {
+					return 4;
+				}
+
+				lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+				Token_init_at(token, TOKEN_KEYWORD_META, lexer->line, lexer->col);
+				return 0;
+
+			case LEXER_STATE_EXPECTING_KEYWORD_TRACK:
+
+				if(verify_string(lexer, "rack:", 5, false) != 0) {
+					return 4;
+				}
+
+				lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+				Token_init_at(token, TOKEN_KEYWORD_TRACK, lexer->line, lexer->col);
+				return 0;
+
 
 			case LEXER_STATE_EXPECTING_TRACK_START:
 

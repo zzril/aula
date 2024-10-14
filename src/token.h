@@ -16,6 +16,8 @@ typedef struct Token Token;
 
 typedef enum TokenType {
 	TOKEN_INVALID = 0,
+	TOKEN_KEYWORD_META,
+	TOKEN_KEYWORD_TRACK,
 	TOKEN_BAR,
 	TOKEN_TRACK_START,
 	TOKEN_TRACK_END,
