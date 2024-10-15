@@ -102,10 +102,6 @@ static int print_error_details(Lexer* lexer, FILE* stream) {
 	long offset = 0;
 	size_t err_pos = 0;
 
-	if(lexer == NULL || stream == NULL) {
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
 	err_pos = lexer->col - 1;
 
 	switch(lexer->error_state) {
@@ -311,6 +307,10 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 }
 
 int Lexer_print_error(Lexer* lexer, FILE* stream) {
+
+	if(lexer == NULL || stream == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
 
 	fprintf(stream ,"%u:%u: %s\n", lexer->line, lexer->col - 1, LexerErrors[lexer->error_state]);
 
