@@ -155,8 +155,8 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 	}
 
 	if(lexer.error) {
-		fprintf(stderr, "Error at %s:%u:%u\n", interpreter->filename, lexer.line, lexer.col);
-		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
+		fprintf(stderr, "%s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col - 1, LexerErrors[lexer.error_state]);
+		status = status != 0? status: ERROR_CODE_LEXER_ERROR;
 	}
 
 	if(interpreter->error) {
