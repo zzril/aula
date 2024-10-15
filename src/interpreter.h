@@ -24,8 +24,8 @@ typedef enum InterpreterState {
 
 typedef enum InterpreterErrorState {
 	INTERPRETER_ERROR_STATE_UNKNOWN_ERROR = 0,
-	INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN,
 	INTERPRETER_ERROR_STATE_INTERNAL_ERROR,
+	INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN,
 	NUM_INTERPRETER_ERROR_STATES,
 } InterpreterErrorState;
 
@@ -36,6 +36,10 @@ struct Interpreter {
 	bool finished;
 	bool error;
 };
+
+// --------
+
+extern const char* InterpreterErrors[NUM_INTERPRETER_ERROR_STATES];
 
 // --------
 

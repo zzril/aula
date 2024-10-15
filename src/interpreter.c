@@ -18,6 +18,14 @@ static int play_bar_token(Player* player, Instrument* instrument, Token* bar);
 
 // --------
 
+const char* InterpreterErrors[NUM_INTERPRETER_ERROR_STATES] = {
+	"unknown error",
+	"unexpected token",
+	"internal error",
+};
+
+// --------
+
 static bool destroy_token(Token* token) {
 	Token_destroy_at(token);
 	return true;
@@ -80,6 +88,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 	if(status != 0) {
 		interpreter->finished = true;
 		interpreter->error = true;
+		interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
 		return status;
 	}
 
@@ -87,6 +96,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 	if(status != 0) {
 		interpreter->finished = true;
 		interpreter->error = true;
+		interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
 		return status;
 	}
 
@@ -94,6 +104,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 	if(status != 0) {
 		interpreter->finished = true;
 		interpreter->error = true;
+		interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
 		Player_destroy_at(&player);
 		return status;
 	}
@@ -117,6 +128,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 					default:
 						interpreter->finished = true;
 						interpreter->error = true;
+						interpreter->error_state = INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN;
 						continue;
 				}
 
@@ -128,7 +140,6 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 						if((status = play_bar_token(&player, &instrument, &token)) != 0) {
 							interpreter->finished = true;
 							interpreter->error = true;
-							interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
 							continue;
 						}
 						continue;
@@ -140,6 +151,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 					default:
 						interpreter->finished = true;
 						interpreter->error = true;
+						interpreter->error_state = INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN;
 						continue;
 				}
 
@@ -161,31 +173,22 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		status = status != 0? status: ERROR_CODE_LEXER_ERROR;
 	}
 
-	if(interpreter->error) {
+	else if(interpreter->error) {
 
 		switch(interpreter->error_state) {
 
 			case INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN:
 
-				fprintf(stderr, "%s:%u:%u: Unexpected token\n", interpreter->filename, lexer.line, lexer.col);
-				if(token.content != NULL) {
-					fputs((char*) (token.content), stderr);
-				}
-				break;
+				fprintf(stderr, "%s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col, InterpreterErrors[interpreter->error_state]);
 
-			case INTERPRETER_ERROR_STATE_INTERNAL_ERROR:
-
-				if(token.content == NULL) {
-					fprintf(stderr, "Internal interpreter error while processing %s:%u:%u\n", interpreter->filename, lexer.line, lexer.col);
-				}
-				else {
-					fprintf(stderr, "Internal interpreter error while processing %s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col, (char*) (token.content));
+				if(Token_print(&token, stderr)) {
+					fputs("\n", stderr);
 				}
 
 				break;
 
 			default:
-				fprintf(stderr, "Unknown interpreter error\n");
+				fprintf(stderr, "%s: %s while parsing\n", interpreter->filename, InterpreterErrors[interpreter->error_state]);
 				break;
 		}
 
