@@ -96,7 +96,7 @@ static int verify_string(Lexer* lexer, const char* remaining, size_t length, boo
 	if(!skip_first) {
 
 		if(lexer->symbol != remaining[index]) {
-			return 1;
+			return ERROR_CODE_UNEXPECTED_CHARACTER;
 		}
 		index++;
 	}
@@ -104,12 +104,12 @@ static int verify_string(Lexer* lexer, const char* remaining, size_t length, boo
 	while(index < length && (c = advance(lexer)) != EOF) {
 
 		if(lexer->symbol != remaining[index]) {
-			return 1;
+			return ERROR_CODE_UNEXPECTED_CHARACTER;
 		}
 		index++;
 	}
 
-	return index == length? 0: 2;
+	return index == length? 0: ERROR_CODE_UNEXPECTED_EOF;
 }
 
 // --------
@@ -195,8 +195,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 			case LEXER_STATE_EXPECTING_KEYWORD_META:
 
-				if(verify_string(lexer, "eta:", 4, false) != 0) {
-					return 4;
+				if((status == verify_string(lexer, "eta:", 4, false)) != 0) {
+					return status;
 				}
 
 				lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
@@ -205,8 +205,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 			case LEXER_STATE_EXPECTING_KEYWORD_TRACK:
 
-				if(verify_string(lexer, "rack:", 5, false) != 0) {
-					return 4;
+				if((status = verify_string(lexer, "rack:", 5, false)) != 0) {
+					return status;
 				}
 
 				lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
