@@ -82,8 +82,9 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 
 	lexer->finished = true;
 	lexer->error = true;
+	lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_EOF;
 
-	return ERROR_CODE_UNEXPECTED_EOF;
+	return ERROR_CODE_LEXER_ERROR;
 }
 
 // --------
@@ -92,6 +93,7 @@ int Lexer_init_at(Lexer* lexer, FILE* stream) {
 
 	lexer->stream = stream;
 	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+	lexer->error_state = LEXER_ERROR_STATE_UNKNOWN_ERROR;
 	lexer->symbol = '\0';
 
 	if(lexer->stream == NULL) {
@@ -157,7 +159,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					default:
 						lexer->error = true;
 						lexer->finished = true;
-						return ERROR_CODE_UNEXPECTED_CHARACTER;
+						lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+						return ERROR_CODE_LEXER_ERROR;
 				}
 
 			case LEXER_STATE_EXPECTING_TRACK_START:
@@ -165,7 +168,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 				if(lexer->symbol != '|') {
 					lexer->error = true;
 					lexer->finished = true;
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+					lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+					return ERROR_CODE_LEXER_ERROR;
 				}
 
 				lexer->state = LEXER_STATE_EXPECTING_BAR;
@@ -212,7 +216,10 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 			case LEXER_STATE_EXPECTING_BAR_COMMENT:
 
 				if(!(lexer->symbol == '/')) {
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+					lexer->error = true;
+					lexer->finished = true;
+					lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+					return ERROR_CODE_LEXER_ERROR;
 				}
 
 				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
