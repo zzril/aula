@@ -20,6 +20,7 @@ Build
 First, you need to install the dependencies.  
 On Debian-based Linux distros that would be achieved by:  
 ```sh
+sudo apt update
 sudo apt install libsdl2-dev
 ```
 
