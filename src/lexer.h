@@ -46,6 +46,10 @@ struct Lexer {
 
 // --------
 
+extern const char* LexerErrors[NUM_LEXER_ERROR_STATES];
+
+// --------
+
 int Lexer_init_at(Lexer* lexer, FILE* stream);
 
 int Lexer_get_next_token(Lexer* lexer, Token* token);

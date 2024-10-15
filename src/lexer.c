@@ -14,6 +14,14 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 
 // --------
 
+const char* LexerErrors[NUM_LEXER_ERROR_STATES] = {
+	"unknown error",
+	"unexpected end of file",
+	"unexpected character",
+};
+
+// --------
+
 static int advance(Lexer* lexer) {
 
 	int c = getc(lexer->stream);
