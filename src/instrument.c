@@ -21,20 +21,17 @@ static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_of
 	size_t samples_to_write;
 	size_t remaining_buffer_space;
 
-	if(done == NULL || cut_off == NULL) {
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
-	*done = false;
-	*cut_off = false;
-
-	if(note == NULL) {
+	if(instrument == NULL || note == NULL || done == NULL || cut_off == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(is_buffer_full(instrument)) {
+		*done = true;
 		return ERROR_CODE_INSTRUMENT_BUFFER_OVERFLOW;
 	}
+
+	*done = false;
+	*cut_off = false;
 
 	remaining_buffer_space = instrument->num_samples - instrument->buffer_position;
 	samples_to_write = Note_get_length_in_samples(note);
