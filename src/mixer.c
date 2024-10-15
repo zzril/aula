@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "error_codes.h"
 #include "mixer.h"
 #include "wave.h"
 
@@ -16,7 +17,7 @@ int Mixer_init_at(Mixer* mixer) {
 	mixer->buffer = reallocarray(NULL, mixer->num_samples, sizeof(float));
 	if(mixer->buffer == NULL) {
 		perror("malloc");
-		return -1;
+		return ERROR_CODE_MALLOC_FAILURE;
 	}
 
 	Mixer_clear_buffer(mixer);
@@ -27,7 +28,7 @@ int Mixer_init_at(Mixer* mixer) {
 int Mixer_clear_buffer(Mixer* mixer) {
 
 	if(mixer == NULL || mixer->buffer == NULL) {
-		return 1;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	generate_silence(mixer->buffer, mixer->num_samples);
@@ -50,11 +51,11 @@ void Mixer_destroy_at(Mixer* mixer) {
 int Mixer_add_notes_from_instrument(Mixer* mixer, Instrument* instrument) {
 
 	if(mixer == NULL || mixer->buffer == NULL || instrument == NULL || instrument->buffer == NULL) {
-		return 1;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(mixer->num_samples != instrument->num_samples) {
-		return 2;
+		return ERROR_CODE_INVALID_STATE;
 	}
 
 	for(size_t t = 0; t < mixer->num_samples; t++) {

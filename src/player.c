@@ -11,6 +11,7 @@
 #include <SDL2/SDL_hints.h>
 
 #include "config.h"
+#include "error_codes.h"
 #include "player.h"
 
 // --------
@@ -61,22 +62,21 @@ int Player_init_at(Player* player) {
 
 	if(player == NULL) {
 		fputs("WARNING: Ignoring call to Player_init_at(NULL) and not initializing SDL.\n", stderr);
-		return 1;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	memset(player, 0, sizeof(Player));
 
 	if(initialized) {
 		fputs("WARNING: Ignoring attempt to initialize multiple Players.\n", stderr);
-		return 2;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 
-	int status = SDL_Init(SDL_INIT_AUDIO);
-	if(status < 0) {
+	if(SDL_Init(SDL_INIT_AUDIO) < 0) {
 		print_sdl_error("SDL_Init");
-		return status;
+		return ERROR_CODE_SDL_ERROR;
 	}
 
 	initialized = true;
@@ -90,10 +90,10 @@ int Player_init_at(Player* player) {
 		else {
 			fputs("Cannot determine sysconf(_SC_PAGESIZE).\n", stderr);
 		}
-		return shutdown(player, -1);
+		return shutdown(player, ERROR_CODE_UNKNOWN_SYSTEM_ERROR);
 	}
 
-	status = Mixer_init_at(&(player->mixer));
+	int status = Mixer_init_at(&(player->mixer));
 	if(status != 0) {
 		return shutdown(player, status);
 	}
@@ -110,7 +110,7 @@ int Player_init_at(Player* player) {
 
 	player->device = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
 	if(player->device == 0) {
-		return shutdown(player, -2);
+		return shutdown(player, ERROR_CODE_SDL_ERROR);
 	}
 
 	player->paused = true;
@@ -133,7 +133,7 @@ void Player_destroy_at(Player* player) {
 int Player_play_bar(Player* player) {
 
 	if(player == NULL) {
-		return 1;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(player->paused) {
@@ -141,10 +141,9 @@ int Player_play_bar(Player* player) {
 		player->paused = false;
 	}
 
-	int status = SDL_QueueAudio(player->device, (player->mixer).buffer, ((player->mixer).num_samples) * sizeof(float));
-	if(status < 0) {
+	if(SDL_QueueAudio(player->device, (player->mixer).buffer, ((player->mixer).num_samples) * sizeof(float)) < 0) {
 		print_sdl_error("SDL_QueueAudio");
-		return status;
+		return ERROR_CODE_SDL_ERROR;
 	}
 
 	while(SDL_GetQueuedAudioSize(player->device) > 2 * ((player->mixer).num_samples) * sizeof(float)) {

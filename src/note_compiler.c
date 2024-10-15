@@ -1,9 +1,15 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <string.h>
 
+#include "error_codes.h"
 #include "note_conversion.h"
 #include "note_compiler.h"
+
+// --------
+
+#define END_OF_BAR EOF
 
 // --------
 
@@ -19,7 +25,7 @@ static int advance(NoteCompiler* compiler) {
 
 	if(compiler->position >= compiler->bar_length) {
 		compiler->finished = true;
-		return -1;
+		return END_OF_BAR;
 	}
 
 	compiler->symbol = (compiler->bar)[compiler->position];
@@ -31,7 +37,7 @@ static int advance(NoteCompiler* compiler) {
 static int peek(NoteCompiler* compiler) {
 
 	if(compiler->position >= compiler->bar_length) {
-		return -1;
+		return END_OF_BAR;
 	}
 
 	return (char) ((compiler->bar)[compiler->position]);
@@ -155,18 +161,26 @@ int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
 	return 0;
 }
 
-int NoteCompiler_get_next_note(void* compiler, Note* note) {
+int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 
 	NoteCompiler* comp = (NoteCompiler*) compiler;
 	int status = 0;
 
-	if((comp == NULL || note == NULL) || (comp->finished | comp->error)) {
-		return 1;
+	if(finished != NULL) {
+		*finished = false;
+	}
+
+	if(comp == NULL || note == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(comp->finished | comp->error) {
+		return ERROR_CODE_INVALID_STATE;
 	}
 
 	memset(note, 0, sizeof(Note));
 
-	while(advance(comp) != -1) {
+	while(advance(comp) != END_OF_BAR) {
 
 		switch(comp->state) {
 
@@ -195,17 +209,19 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 					default:
 						comp->error = true;
 						comp->finished = true;
-						return 1;
+						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 			default:
 				comp->error = true;
 				comp->finished = true;
-				return 1;
+				return ERROR_CODE_INVALID_STATE;
 		}
 	}
 
-	comp->error = true;
+	if(finished != NULL) {
+		*finished = true;
+	}
 	comp->finished = true;
-	return 1;
+	return 0;
 }
 
