@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <string.h>
@@ -11,6 +10,16 @@
 static int advance(Lexer* lexer);
 
 static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
+
+static int print_error_details(Lexer* lexer, FILE* stream);
+
+// --------
+
+const char* LexerErrors[NUM_LEXER_ERROR_STATES] = {
+	"unknown error",
+	"unexpected end of file",
+	"unexpected character",
+};
 
 // --------
 
@@ -82,8 +91,58 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 
 	lexer->finished = true;
 	lexer->error = true;
+	lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_EOF;
 
-	return ERROR_CODE_UNEXPECTED_EOF;
+	return ERROR_CODE_LEXER_ERROR;
+}
+
+static int print_error_details(Lexer* lexer, FILE* stream) {
+
+	char* buf = NULL;
+	long offset = 0;
+	size_t err_pos = 0;
+
+	err_pos = lexer->col - 1;
+
+	switch(lexer->error_state) {
+
+		case LEXER_ERROR_STATE_UNEXPECTED_EOF:
+		case LEXER_ERROR_STATE_UNEXPECTED_CHARACTER:
+
+			if((offset = ftell(lexer->stream)) < 0) {
+				perror("ftell");
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			if(fseek(lexer->stream, offset - err_pos, SEEK_SET) < 0) {
+				perror("fseek");
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			if((buf = reallocarray(NULL, err_pos, sizeof(char))) == NULL) {
+				perror("malloc");
+				return ERROR_CODE_MALLOC_FAILURE;
+			}
+			memset(buf, 0, err_pos);
+
+			fread(buf, sizeof(char), err_pos, lexer->stream);
+			fputs(buf, stream);
+
+			free(buf);
+
+			fputs("\n", stream);
+
+			if(lexer->error_state == LEXER_ERROR_STATE_UNEXPECTED_CHARACTER) {
+				if(fprintf(stream, "%.*s^\n", (int) err_pos - 1, " ") < 0) {
+					return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+				}
+			}
+
+			return 0;
+
+		default:
+			return 0;
+	}
 }
 
 // --------
@@ -92,6 +151,7 @@ int Lexer_init_at(Lexer* lexer, FILE* stream) {
 
 	lexer->stream = stream;
 	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+	lexer->error_state = LEXER_ERROR_STATE_UNKNOWN_ERROR;
 	lexer->symbol = '\0';
 
 	if(lexer->stream == NULL) {
@@ -157,7 +217,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					default:
 						lexer->error = true;
 						lexer->finished = true;
-						return ERROR_CODE_UNEXPECTED_CHARACTER;
+						lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+						return ERROR_CODE_LEXER_ERROR;
 				}
 
 			case LEXER_STATE_EXPECTING_TRACK_START:
@@ -165,7 +226,8 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 				if(lexer->symbol != '|') {
 					lexer->error = true;
 					lexer->finished = true;
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+					lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+					return ERROR_CODE_LEXER_ERROR;
 				}
 
 				lexer->state = LEXER_STATE_EXPECTING_BAR;
@@ -212,7 +274,10 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 			case LEXER_STATE_EXPECTING_BAR_COMMENT:
 
 				if(!(lexer->symbol == '/')) {
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+					lexer->error = true;
+					lexer->finished = true;
+					lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_CHARACTER;
+					return ERROR_CODE_LEXER_ERROR;
 				}
 
 				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
@@ -239,5 +304,16 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 	lexer->finished = true;
 	return 0;
+}
+
+int Lexer_print_error(Lexer* lexer, FILE* stream) {
+
+	if(lexer == NULL || stream == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	fprintf(stream ,"%u:%u: %s\n", lexer->line, lexer->col - 1, LexerErrors[lexer->error_state]);
+
+	return print_error_details(lexer, stream);
 }
 

@@ -2,6 +2,7 @@
 #define TOKEN_H
 // --------
 
+#include <stdio.h>
 #include <stddef.h>
 
 // --------
@@ -38,6 +39,8 @@ void Token_init_at(Token* token, TokenType type, unsigned int line, unsigned int
 void Token_set_content(Token* token, void* content, size_t content_length);
 
 void Token_destroy_at(Token* token);
+
+int Token_print(Token* token, FILE* stream);
 
 // --------
 #endif

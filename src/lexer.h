@@ -26,9 +26,17 @@ typedef enum LexerState {
 	NUM_LEXER_STATES,
 } LexerState;
 
+typedef enum LexerErrorState {
+	LEXER_ERROR_STATE_UNKNOWN_ERROR = 0,
+	LEXER_ERROR_STATE_UNEXPECTED_EOF,
+	LEXER_ERROR_STATE_UNEXPECTED_CHARACTER,
+	NUM_LEXER_ERROR_STATES,
+} LexerErrorState;
+
 struct Lexer {
 	FILE* stream;
 	LexerState state;
+	LexerErrorState error_state;
 	unsigned int line;
 	unsigned int col;
 	char symbol;
@@ -38,9 +46,15 @@ struct Lexer {
 
 // --------
 
+extern const char* LexerErrors[NUM_LEXER_ERROR_STATES];
+
+// --------
+
 int Lexer_init_at(Lexer* lexer, FILE* stream);
 
 int Lexer_get_next_token(Lexer* lexer, Token* token);
+
+int Lexer_print_error(Lexer* lexer, FILE* stream);
 
 // --------
 #endif
