@@ -54,6 +54,8 @@ int Lexer_init_at(Lexer* lexer, FILE* stream);
 
 int Lexer_get_next_token(Lexer* lexer, Token* token);
 
+int Lexer_print_error(Lexer* lexer, FILE* stream);
+
 // --------
 #endif
 

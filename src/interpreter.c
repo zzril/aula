@@ -155,7 +155,9 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 	}
 
 	if(lexer.error) {
-		fprintf(stderr, "%s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col - 1, LexerErrors[lexer.error_state]);
+		fputs(interpreter->filename, stderr);
+		fputs(": ", stderr);
+		Lexer_print_error(&lexer, stderr);
 		status = status != 0? status: ERROR_CODE_LEXER_ERROR;
 	}
 

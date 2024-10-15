@@ -256,3 +256,10 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 	return 0;
 }
 
+int Lexer_print_error(Lexer* lexer, FILE* stream) {
+
+	fprintf(stream ,"%u:%u: %s\n", lexer->line, lexer->col - 1, LexerErrors[lexer->error_state]);
+
+	return 0;
+}
+
