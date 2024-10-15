@@ -36,7 +36,7 @@ struct NoteCompiler {
 
 int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length);
 
-int NoteCompiler_get_next_note(void* compiler, Note* note);
+int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished);
 
 // --------
 #endif

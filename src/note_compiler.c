@@ -161,10 +161,14 @@ int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
 	return 0;
 }
 
-int NoteCompiler_get_next_note(void* compiler, Note* note) {
+int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 
 	NoteCompiler* comp = (NoteCompiler*) compiler;
 	int status = 0;
+
+	if(finished != NULL) {
+		*finished = false;
+	}
 
 	if(comp == NULL || note == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -214,8 +218,10 @@ int NoteCompiler_get_next_note(void* compiler, Note* note) {
 		}
 	}
 
-	comp->error = true;
+	if(finished != NULL) {
+		*finished = true;
+	}
 	comp->finished = true;
-	return ERROR_CODE_END_OF_BAR;
+	return 0;
 }
 

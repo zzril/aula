@@ -11,16 +11,17 @@
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note, bool* overflow);
+static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_off);
 static bool is_buffer_full(Instrument* instrument);
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note, bool* cut_off) {
+static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_off) {
 
 	size_t samples_to_write;
 	size_t remaining_buffer_space;
 
+	*done = false;
 	*cut_off = false;
 
 	if(note == NULL) {
@@ -37,6 +38,10 @@ static int add_note(Instrument* instrument, Note* note, bool* cut_off) {
 	if(samples_to_write > remaining_buffer_space) {
 		samples_to_write = remaining_buffer_space;
 		*cut_off = true;
+	}
+
+	if(samples_to_write == remaining_buffer_space) {
+		*done = true;
 	}
 
 	if(!Note_is_rest(note)) {
@@ -92,23 +97,37 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 
 	Note note;
 	int status = 0;
+	bool provider_done = false;
+	bool instrument_done = false;
 	bool cut_off = false;
 
-	while((status = note_provider(arg, &note)) == 0) {
+	while((status = note_provider(arg, &note, &provider_done)) == 0 && !provider_done && !instrument_done) {
 
-		int rv = add_note(instrument, &note, &cut_off);
-
-		if(cut_off) {
-			fputs("WARNING: Instrument buffer full, cutting off note.\n", stderr);
-		}
+		int rv = add_note(instrument, &note, &instrument_done, &cut_off);
 
 		if(rv != 0) {
 			return rv;
 		}
+
+		if(cut_off) {
+			fputs("WARNING: Instrument buffer full, cutting off note.\n", stderr);
+		}
+	}
+
+	if(status != 0) {
+		return status;
+	}
+
+	if(!instrument_done) {
+		return ERROR_CODE_BAR_TOO_SHORT;
 	}
 
 	if(!is_buffer_full(instrument)) {
-		return status;
+		fputs("WARNING: Instrument buffer not completely filled, making up with silence.\n", stderr);
+	}
+
+	if(!provider_done) {
+		return ERROR_CODE_BAR_TOO_LONG;
 	}
 
 	return 0;

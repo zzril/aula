@@ -2,6 +2,7 @@
 #define INSTRUMENT_H
 // --------
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "note.h"
@@ -14,7 +15,7 @@ struct Instrument;
 
 typedef struct Instrument Instrument;
 
-typedef int (*NoteProvider)(void*, Note*);
+typedef int (*NoteProvider)(void*, Note*, bool*);
 
 // --------
 
