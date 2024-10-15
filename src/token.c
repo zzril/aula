@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "error_codes.h"
 #include "token.h"
 
 // --------
@@ -33,5 +34,26 @@ void Token_destroy_at(Token* token) {
 	memset(token, 0, sizeof(Token));
 
 	return;
+}
+
+int Token_print(Token* token, FILE* stream) {
+
+	if(token == NULL || stream == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	switch(token->type) {
+
+		case TOKEN_BAR:
+			if(token->content != NULL) {
+				fputs("\"", stream);
+				fputs((char*) (token->content), stream);
+				fputs("\"", stream);
+			}
+			return 0;
+
+		default:
+			return 0;
+	}
 }
 
