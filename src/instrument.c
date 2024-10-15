@@ -21,6 +21,10 @@ static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_of
 	size_t samples_to_write;
 	size_t remaining_buffer_space;
 
+	if(done == NULL || cut_off == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
 	*done = false;
 	*cut_off = false;
 
