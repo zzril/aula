@@ -162,5 +162,7 @@ void Player_finish(Player* player) {
 			sleep(1);
 		}
 	}
+
+	return;
 }
 
