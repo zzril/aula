@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "error_codes.h"
 #include "instrument.h"
 #include "interpreter.h"
 #include "lexer.h"
@@ -30,7 +31,7 @@ static int play_bar_token(Player* player, Instrument* instrument, Token* bar_tok
 	Instrument* instruments[] = {instrument};
 
 	if(bar_token == NULL || bar_token->type != TOKEN_BAR || bar_token->content == NULL) {
-		return 1;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	NoteCompiler_init_at(&compiler, (char*) (bar_token->content), bar_token->content_length);
@@ -155,7 +156,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 	if(lexer.error) {
 		fprintf(stderr, "Error at %s:%u:%u\n", interpreter->filename, lexer.line, lexer.col);
-		status = status != 0? status: 1;
+		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
 	if(interpreter->error) {
@@ -186,7 +187,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 				break;
 		}
 
-		status = status != 0? status: 1;
+		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
 	Token_destroy_at(&token);
@@ -202,7 +203,7 @@ int Interpreter_interpret_file(Interpreter* interpreter, char* filename) {
 	FILE* stream = fopen(filename, "r");
 	if(stream == NULL) {
 		perror(filename);
-		return -1;
+		return ERROR_CODE_OPEN_FAILURE;
 	}
 
 	interpreter->filename = strdup(filename);
