@@ -12,6 +12,8 @@ static int advance(Lexer* lexer);
 
 static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
 
+static int print_error_details(Lexer* lexer, FILE* stream);
+
 // --------
 
 const char* LexerErrors[NUM_LEXER_ERROR_STATES] = {
@@ -93,6 +95,59 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 	lexer->error_state = LEXER_ERROR_STATE_UNEXPECTED_EOF;
 
 	return ERROR_CODE_LEXER_ERROR;
+}
+
+static int print_error_details(Lexer* lexer, FILE* stream) {
+
+	char* buf = NULL;
+	long offset = 0;
+	size_t err_pos = 0;
+
+	if(lexer == NULL || stream == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	err_pos = lexer->col - 1;
+
+	switch(lexer->error_state) {
+
+		case LEXER_ERROR_STATE_UNEXPECTED_EOF:
+		case LEXER_ERROR_STATE_UNEXPECTED_CHARACTER:
+
+			if((offset = ftell(lexer->stream)) < 0) {
+				perror("ftell");
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			if(fseek(lexer->stream, offset - err_pos, SEEK_SET) < 0) {
+				perror("fseek");
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			if((buf = reallocarray(NULL, err_pos, sizeof(char))) == NULL) {
+				perror("malloc");
+				return ERROR_CODE_MALLOC_FAILURE;
+			}
+			memset(buf, 0, err_pos);
+
+			fread(buf, sizeof(char), err_pos, lexer->stream);
+			fputs(buf, stream);
+
+			free(buf);
+
+			fputs("\n", stream);
+
+			if(lexer->error_state == LEXER_ERROR_STATE_UNEXPECTED_CHARACTER) {
+				if(fprintf(stream, "%.*s^\n", (int) err_pos - 1, " ") < 0) {
+					return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+				}
+			}
+
+			return 0;
+
+		default:
+			return 0;
+	}
 }
 
 // --------
@@ -260,6 +315,6 @@ int Lexer_print_error(Lexer* lexer, FILE* stream) {
 
 	fprintf(stream ,"%u:%u: %s\n", lexer->line, lexer->col - 1, LexerErrors[lexer->error_state]);
 
-	return 0;
+	return print_error_details(lexer, stream);
 }
 
