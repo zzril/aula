@@ -5,38 +5,38 @@
 #include <string.h>
 
 #include "config.h"
+#include "error_codes.h"
 #include "instrument.h"
 #include "wave.h"
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note);
+static int add_note(Instrument* instrument, Note* note, bool* overflow);
 static bool is_buffer_full(Instrument* instrument);
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note) {
+static int add_note(Instrument* instrument, Note* note, bool* cut_off) {
 
 	size_t samples_to_write;
 	size_t remaining_buffer_space;
-	bool overflow;
+
+	*cut_off = false;
 
 	if(note == NULL) {
-		return 2;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(is_buffer_full(instrument)) {
-		return 3;
+		return ERROR_CODE_INSTRUMENT_BUFFER_OVERFLOW;
 	}
-
-	overflow = false;
 
 	remaining_buffer_space = instrument->num_samples - instrument->buffer_position;
 	samples_to_write = Note_get_length_in_samples(note);
 
 	if(samples_to_write > remaining_buffer_space) {
 		samples_to_write = remaining_buffer_space;
-		overflow = true;
+		*cut_off = true;
 	}
 
 	if(!Note_is_rest(note)) {
@@ -45,7 +45,7 @@ static int add_note(Instrument* instrument, Note* note) {
 
 	instrument->buffer_position += samples_to_write;
 
-	return overflow? 1: 0;
+	return 0;
 }
 
 static bool is_buffer_full(Instrument* instrument) {
@@ -62,7 +62,7 @@ int Instrument_init_at(Instrument* instrument, void* instrument_definition) {
 	instrument->buffer = reallocarray(NULL, instrument->num_samples, sizeof(float));
 	if(instrument->buffer == NULL) {
 		perror("malloc");
-		return -1;
+		return ERROR_CODE_MALLOC_FAILURE;
 	}
 
 	reset_buffer(instrument);
@@ -92,19 +92,18 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 
 	Note note;
 	int status = 0;
+	bool cut_off = false;
 
 	while((status = note_provider(arg, &note)) == 0) {
 
-		int rv = add_note(instrument, &note);
+		int rv = add_note(instrument, &note, &cut_off);
+
+		if(cut_off) {
+			fputs("WARNING: Instrument buffer full, cutting off note.\n", stderr);
+		}
 
 		if(rv != 0) {
-			if(rv == 1) {
-				fputs("WARNING: Instrument buffer full, cutting off remaining note(s)\n", stderr);
-				return 0;
-			}
-			else {
-				return rv;
-			}
+			return rv;
 		}
 	}
 
