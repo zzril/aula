@@ -1,5 +1,5 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef TRACK_LEXER_H
+#define TRACK_LEXER_H
 // --------
 
 #include <stdio.h>
