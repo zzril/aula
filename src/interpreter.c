@@ -5,10 +5,10 @@
 #include "error_codes.h"
 #include "instrument.h"
 #include "interpreter.h"
-#include "lexer.h"
 #include "mixer.h"
 #include "note_compiler.h"
 #include "player.h"
+#include "track_lexer.h"
 
 // --------
 
@@ -64,19 +64,19 @@ void Interpreter_init_at(Interpreter* interpreter) {
 
 int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
-	Lexer lexer;
+	TrackLexer lexer;
 	Token token;
 	Player player;
 	Instrument instrument;
 
 	int status = 0;
 
-	memset(&lexer, 0, sizeof(Lexer));
+	memset(&lexer, 0, sizeof(TrackLexer));
 	memset(&token, 0, sizeof(Token));
 	memset(&instrument, 0, sizeof(Instrument));
 	memset(&player, 0, sizeof(Player));
 
-	status = Lexer_init_at(&lexer, stream);
+	status = TrackLexer_init_at(&lexer, stream);
 	if(status != 0) {
 		interpreter->finished = true;
 		interpreter->error = true;
@@ -98,7 +98,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		return status;
 	}
 
-	while(!interpreter->finished && destroy_token(&token) && (status = Lexer_get_next_token(&lexer, &token)) == 0 && !lexer.finished) {
+	while(!interpreter->finished && destroy_token(&token) && (status = TrackLexer_get_next_token(&lexer, &token)) == 0 && !lexer.finished) {
 
 		if(token.type == TOKEN_COMMENT) {
 			continue;

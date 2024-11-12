@@ -4,17 +4,17 @@
 #include <string.h>
 
 #include "error_codes.h"
-#include "lexer.h"
+#include "track_lexer.h"
 
 // --------
 
-static int advance(Lexer* lexer);
+static int advance(TrackLexer* lexer);
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
+static int fill_buffer_until(TrackLexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
 
 // --------
 
-static int advance(Lexer* lexer) {
+static int advance(TrackLexer* lexer) {
 
 	int c = getc(lexer->stream);
 	if(c == EOF) {
@@ -33,7 +33,7 @@ static int advance(Lexer* lexer) {
 	return c;
 }
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first) {
+static int fill_buffer_until(TrackLexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first) {
 
 	int c;
 	size_t capacity = initial_capacity;
@@ -88,10 +88,10 @@ static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacit
 
 // --------
 
-int Lexer_init_at(Lexer* lexer, FILE* stream) {
+int TrackLexer_init_at(TrackLexer* lexer, FILE* stream) {
 
 	lexer->stream = stream;
-	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+	lexer->state = TRACK_LEXER_STATE_EXPECTING_NEW_TOKEN;
 	lexer->symbol = '\0';
 
 	if(lexer->stream == NULL) {
@@ -111,7 +111,7 @@ int Lexer_init_at(Lexer* lexer, FILE* stream) {
 	return 0;
 }
 
-int Lexer_get_next_token(Lexer* lexer, Token* token) {
+int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
 
 	if(lexer == NULL || (lexer->finished | lexer->error)) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -135,7 +135,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 		switch(lexer->state) {
 
-			case LEXER_STATE_EXPECTING_NEW_TOKEN:
+			case TRACK_LEXER_STATE_EXPECTING_NEW_TOKEN:
 
 				switch(lexer->symbol) {
 
@@ -147,11 +147,11 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 					case '|':
 
-						lexer->state = LEXER_STATE_EXPECTING_TRACK_START;
+						lexer->state = TRACK_LEXER_STATE_EXPECTING_TRACK_START;
 						continue;
 
 					case '/':
-						lexer->state = LEXER_STATE_EXPECTING_COMMENT;
+						lexer->state = TRACK_LEXER_STATE_EXPECTING_COMMENT;
 						continue;
 
 					default:
@@ -160,7 +160,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 
-			case LEXER_STATE_EXPECTING_TRACK_START:
+			case TRACK_LEXER_STATE_EXPECTING_TRACK_START:
 
 				if(lexer->symbol != '|') {
 					lexer->error = true;
@@ -168,11 +168,11 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 
-				lexer->state = LEXER_STATE_EXPECTING_BAR;
+				lexer->state = TRACK_LEXER_STATE_EXPECTING_BAR;
 				Token_init_at(token, TOKEN_TRACK_START, lexer->line, lexer->col);
 				return 0;
 
-			case LEXER_STATE_EXPECTING_BAR:
+			case TRACK_LEXER_STATE_EXPECTING_BAR:
 
 				switch(lexer->symbol) {
 
@@ -183,12 +183,12 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						continue;
 
 					case '|':
-						lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+						lexer->state = TRACK_LEXER_STATE_EXPECTING_NEW_TOKEN;
 						Token_init_at(token, TOKEN_TRACK_END, lexer->line, lexer->col);
 						return 0;
 
 					case '/':
-						lexer->state = LEXER_STATE_EXPECTING_BAR_COMMENT;
+						lexer->state = TRACK_LEXER_STATE_EXPECTING_BAR_COMMENT;
 						continue;
 
 					default:
@@ -208,14 +208,14 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 				return 0;
 
-			case LEXER_STATE_EXPECTING_COMMENT:
-			case LEXER_STATE_EXPECTING_BAR_COMMENT:
+			case TRACK_LEXER_STATE_EXPECTING_COMMENT:
+			case TRACK_LEXER_STATE_EXPECTING_BAR_COMMENT:
 
 				if(!(lexer->symbol == '/')) {
 					return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 
-				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
+				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == TRACK_LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
 				if(status != 0) {
 					return status;
 				}
@@ -226,7 +226,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 				buffer = NULL;
 				length = 0;
 
-				lexer->state = lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? LEXER_STATE_EXPECTING_BAR: LEXER_STATE_EXPECTING_NEW_TOKEN;
+				lexer->state = lexer->state == TRACK_LEXER_STATE_EXPECTING_BAR_COMMENT? TRACK_LEXER_STATE_EXPECTING_BAR: TRACK_LEXER_STATE_EXPECTING_NEW_TOKEN;
 
 				return 0;
 
