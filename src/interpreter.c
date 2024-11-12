@@ -12,25 +12,25 @@
 
 // --------
 
-static bool destroy_token(Token* token);
+static bool destroy_token(Bar* bar);
 
-static int play_bar_token(Player* player, Instrument* instrument, Token* bar);
+static int play_bar_token(Player* player, Instrument* instrument, Bar* bar);
 
 // --------
 
-static bool destroy_token(Token* token) {
-	Token_destroy_at(token);
+static bool destroy_token(Bar* bar) {
+	Bar_destroy_at(bar);
 	return true;
 }
 
-static int play_bar_token(Player* player, Instrument* instrument, Token* bar_token) {
+static int play_bar_token(Player* player, Instrument* instrument, Bar* bar_token) {
 
 	NoteCompiler compiler;
 	int status;
 
 	Instrument* instruments[] = {instrument};
 
-	if(bar_token == NULL || bar_token->type != TOKEN_BAR || bar_token->content == NULL) {
+	if(bar_token == NULL || bar_token->type != BAR_BAR || bar_token->content == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
@@ -65,14 +65,14 @@ void Interpreter_init_at(Interpreter* interpreter) {
 int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 	TrackLexer lexer;
-	Token token;
+	Bar bar;
 	Player player;
 	Instrument instrument;
 
 	int status = 0;
 
 	memset(&lexer, 0, sizeof(TrackLexer));
-	memset(&token, 0, sizeof(Token));
+	memset(&bar, 0, sizeof(Bar));
 	memset(&instrument, 0, sizeof(Instrument));
 	memset(&player, 0, sizeof(Player));
 
@@ -98,9 +98,9 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		return status;
 	}
 
-	while(!interpreter->finished && destroy_token(&token) && (status = TrackLexer_get_next_token(&lexer, &token)) == 0 && !lexer.finished) {
+	while(!interpreter->finished && destroy_token(&bar) && (status = TrackLexer_get_next_token(&lexer, &bar)) == 0 && !lexer.finished) {
 
-		if(token.type == TOKEN_COMMENT) {
+		if(bar.type == BAR_COMMENT) {
 			continue;
 		}
 
@@ -108,9 +108,9 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 			case INTERPRETER_STATE_EXPECTING_TRACK:
 
-				switch(token.type) {
+				switch(bar.type) {
 
-					case TOKEN_TRACK_START:
+					case BAR_TRACK_START:
 						interpreter->state = INTERPRETER_STATE_EXPECTING_BAR;
 						continue;
 
@@ -122,10 +122,10 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 			case INTERPRETER_STATE_EXPECTING_BAR:
 
-				switch(token.type) {
+				switch(bar.type) {
 
-					case TOKEN_BAR:
-						if((status = play_bar_token(&player, &instrument, &token)) != 0) {
+					case BAR_BAR:
+						if((status = play_bar_token(&player, &instrument, &bar)) != 0) {
 							interpreter->finished = true;
 							interpreter->error = true;
 							interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
@@ -133,7 +133,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 						}
 						continue;
 
-					case TOKEN_TRACK_END:
+					case BAR_TRACK_END:
 						interpreter->state = INTERPRETER_STATE_DONE;
 						continue;
 
@@ -166,18 +166,18 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 			case INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN:
 
 				fprintf(stderr, "%s:%u:%u: Unexpected token\n", interpreter->filename, lexer.line, lexer.col);
-				if(token.content != NULL) {
-					fputs((char*) (token.content), stderr);
+				if(bar.content != NULL) {
+					fputs((char*) (bar.content), stderr);
 				}
 				break;
 
 			case INTERPRETER_ERROR_STATE_INTERNAL_ERROR:
 
-				if(token.content == NULL) {
+				if(bar.content == NULL) {
 					fprintf(stderr, "Internal interpreter error while processing %s:%u:%u\n", interpreter->filename, lexer.line, lexer.col);
 				}
 				else {
-					fprintf(stderr, "Internal interpreter error while processing %s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col, (char*) (token.content));
+					fprintf(stderr, "Internal interpreter error while processing %s:%u:%u: %s\n", interpreter->filename, lexer.line, lexer.col, (char*) (bar.content));
 				}
 
 				break;
@@ -190,7 +190,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
-	Token_destroy_at(&token);
+	Bar_destroy_at(&bar);
 	Instrument_destroy_at(&instrument);
 	Player_finish(&player);
 	Player_destroy_at(&player);

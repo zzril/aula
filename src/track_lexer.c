@@ -111,19 +111,19 @@ int TrackLexer_init_at(TrackLexer* lexer, FILE* stream) {
 	return 0;
 }
 
-int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
+int TrackLexer_get_next_token(TrackLexer* lexer, Bar* bar) {
 
 	if(lexer == NULL || (lexer->finished | lexer->error)) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	if(token == NULL) {
+	if(bar == NULL) {
 		lexer->finished = true;
 		lexer->error = true;
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	memset(token, 0, sizeof(Token));
+	memset(bar, 0, sizeof(Bar));
 
 	int c;
 
@@ -169,7 +169,7 @@ int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
 				}
 
 				lexer->state = TRACK_LEXER_STATE_EXPECTING_BAR;
-				Token_init_at(token, TOKEN_TRACK_START, lexer->line, lexer->col);
+				Bar_init_at(bar, BAR_TRACK_START, lexer->line, lexer->col);
 				return 0;
 
 			case TRACK_LEXER_STATE_EXPECTING_BAR:
@@ -184,7 +184,7 @@ int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
 
 					case '|':
 						lexer->state = TRACK_LEXER_STATE_EXPECTING_NEW_TOKEN;
-						Token_init_at(token, TOKEN_TRACK_END, lexer->line, lexer->col);
+						Bar_init_at(bar, BAR_TRACK_END, lexer->line, lexer->col);
 						return 0;
 
 					case '/':
@@ -200,8 +200,8 @@ int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
 					return status;
 				}
 
-				Token_init_at(token, TOKEN_BAR, lexer->line, lexer->col - length);
-				Token_set_content(token, buffer, length);
+				Bar_init_at(bar, BAR_BAR, lexer->line, lexer->col - length);
+				Bar_set_content(bar, buffer, length);
 
 				buffer = NULL;
 				length = 0;
@@ -220,8 +220,8 @@ int TrackLexer_get_next_token(TrackLexer* lexer, Token* token) {
 					return status;
 				}
 
-				Token_init_at(token, TOKEN_COMMENT, lexer->line, lexer->col - length);
-				Token_set_content(token, buffer, length);
+				Bar_init_at(bar, BAR_COMMENT, lexer->line, lexer->col - length);
+				Bar_set_content(bar, buffer, length);
 
 				buffer = NULL;
 				length = 0;

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "token.h"
+#include "bar.h"
 
 // --------
 
@@ -40,7 +40,7 @@ struct TrackLexer {
 
 int TrackLexer_init_at(TrackLexer* lexer, FILE* stream);
 
-int TrackLexer_get_next_token(TrackLexer* lexer, Token* token);
+int TrackLexer_get_next_token(TrackLexer* lexer, Bar* bar);
 
 // --------
 #endif
