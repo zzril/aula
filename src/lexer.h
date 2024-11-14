@@ -25,12 +25,10 @@ typedef enum LexerState {
 } LexerState;
 
 struct Lexer {
-	FILE* stream;
 	char* buffer;
 	size_t buffer_capacity;
 	size_t buffer_length;
 	size_t initial_buffer_capacity;
-	LexerState state;
 	unsigned int line;
 	unsigned int col;
 	unsigned int saved_line;
@@ -38,6 +36,8 @@ struct Lexer {
 	char symbol;
 	bool finished;
 	bool error;
+	LexerState state;
+	FILE* stream;
 };
 
 // --------

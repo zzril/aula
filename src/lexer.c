@@ -25,6 +25,10 @@ static bool verify_keyword(Lexer* lexer, char* keyword);
 
 static int advance(Lexer* lexer) {
 
+	if(lexer->finished | lexer->error) {
+		return EOF;
+	}
+
 	int c = getc(lexer->stream);
 	if(c == EOF) {
 		lexer->finished = true;
@@ -43,6 +47,10 @@ static int advance(Lexer* lexer) {
 }
 
 static int peek(Lexer* lexer) {
+
+	if(lexer->finished | lexer->error) {
+		return EOF;
+	}
 
 	int c = getc(lexer->stream);
 	if(c == EOF) {
@@ -193,31 +201,27 @@ static bool verify_keyword(Lexer* lexer, char* keyword) {
 
 int Lexer_init_at(Lexer* lexer, FILE* stream) {
 
-	lexer->stream = stream;
-	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
-	lexer->buffer = NULL;
-	lexer->buffer_capacity = 0;
-	lexer->buffer_length = 0;
-	lexer->initial_buffer_capacity = 256;
-	lexer->symbol = '\0';
-
-	if(lexer->stream == NULL) {
-		lexer->line = 0;
-		lexer->col = 0;
-		lexer->saved_line = 0;
-		lexer->saved_col = 0;
-		lexer->finished = true;
-		lexer->error = true;
+	if(lexer == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
+	if(stream == NULL) {
+		lexer->error = true;
+		lexer->finished = true;
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	lexer->initial_buffer_capacity = 256;
+	lexer->symbol = '\0';
 	lexer->line = 1;
 	lexer->col = 1;
-	lexer->saved_line = 1;
-	lexer->saved_col = 1;
-
 	lexer->finished = false;
 	lexer->error = false;
+	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+	lexer->stream = stream;
+
+	update_lineinfo(lexer);
+	reset_buffer_info(lexer);
 
 	return 0;
 }
@@ -235,13 +239,13 @@ void Lexer_destroy_at(Lexer* lexer) {
 
 int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
-	if(lexer == NULL || (lexer->finished | lexer->error)) {
+	if(lexer == NULL || lexer->finished || lexer->error) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(token == NULL) {
-		lexer->finished = true;
 		lexer->error = true;
+		lexer->finished = true;
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
@@ -296,7 +300,7 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					case '/':
 
 						if(advance(lexer) != (int) '/') {
-							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
 						}
 
 						lexer->state = LEXER_STATE_EXPECTING_COMMENT;
