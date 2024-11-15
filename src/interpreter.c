@@ -14,6 +14,7 @@
 // --------
 
 static bool destroy_token(Token* token);
+static bool destroy_bar_token(BarToken* bar);
 
 static int play_track_token(Player* player, Instrument* instrument, Token* track);
 
@@ -26,15 +27,36 @@ static bool destroy_token(Token* token) {
 	return true;
 }
 
+static bool destroy_bar_token(BarToken* bar) {
+	BarToken_destroy_at(bar);
+	return true;
+}
 static int play_track_token(Player* player, Instrument* instrument, Token* track) {
 
 	if(player == NULL || instrument == NULL || track == NULL || track->type != TOKEN_TRACK) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	//TODO: Invoke TrackLexer and play each bar
+	TrackLexer lexer;
+	BarToken bar;
+	int status;
 
-	return 0;
+	status = TrackLexer_init_at(&lexer, track);
+	if(status != 0) {
+		return status;
+	}
+
+	while(status == 0 && destroy_bar_token(&bar) && !lexer.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
+		status = play_bar_token(player, instrument, &bar);
+	}
+
+	if(status != 0) {
+		destroy_bar_token(&bar);
+	}
+
+	TrackLexer_destroy_at(&lexer);
+
+	return status;
 }
 
 static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar) {

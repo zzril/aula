@@ -334,6 +334,17 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 							continue;
 						}
 
+						if(advance(lexer) != '|') {
+							lexer->error = true;
+							lexer->finished = true;
+							return ERROR_CODE_INVALID_STATE;
+						}
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
 						status = finalize_buffer(lexer);
 						if(status != 0) {
 							return status;
