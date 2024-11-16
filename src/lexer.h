@@ -3,8 +3,8 @@
 // --------
 
 #include <stdio.h>
-#include <stdbool.h>
 
+#include "abstract_lexer.h"
 #include "token.h"
 
 // --------
@@ -25,17 +25,7 @@ typedef enum LexerState {
 } LexerState;
 
 struct Lexer {
-	char* buffer;
-	size_t buffer_capacity;
-	size_t buffer_length;
-	size_t initial_buffer_capacity;
-	unsigned int line;
-	unsigned int col;
-	unsigned int saved_line;
-	unsigned int saved_col;
-	char symbol;
-	bool finished;
-	bool error;
+	AbstractLexer super;
 	LexerState state;
 	FILE* stream;
 };

@@ -8,33 +8,26 @@
 
 // --------
 
-static int advance(TrackLexer* lexer);
-static int peek(TrackLexer* lexer);
+static int advance(AbstractLexer* lexer);
+static int peek(AbstractLexer* lexer);
 
-static void update_lineinfo(TrackLexer* lexer);
-
-static void reset_buffer_info(TrackLexer* lexer);
-static void free_buffer(TrackLexer* lexer);
-
-static int append_char_to_buffer(TrackLexer* lexer, char c);
-static int append_current_symbol_to_buffer(TrackLexer* lexer);
-static int finalize_buffer(TrackLexer* lexer);
+static int TrackLexer_get_next_bar_internal(AbstractLexer* lexer, BarToken* token);
 
 // --------
 
-static int advance(TrackLexer* lexer) {
+static int advance(AbstractLexer* lexer) {
 
 	if(lexer->finished | lexer->error) {
 		return EOF;
 	}
 
-	if(lexer->track_position >= lexer->track->content_length) {
+	if(((TrackLexer*) lexer)->track_position >= ((TrackLexer*) lexer)->track->content_length) {
 		lexer->finished = true;
 		return EOF;
 	}
 
-	lexer->symbol = ((char*) (lexer->track->content))[lexer->track_position];
-	(lexer->track_position)++;
+	lexer->symbol = ((char*) (((TrackLexer*) lexer)->track->content))[((TrackLexer*) lexer)->track_position];
+	(((TrackLexer*) lexer)->track_position)++;
 	(lexer->col)++;
 
 	if(lexer->symbol == '\n') {
@@ -45,164 +38,20 @@ static int advance(TrackLexer* lexer) {
 	return (int) (lexer->symbol);
 }
 
-static int peek(TrackLexer* lexer) {
+static int peek(AbstractLexer* lexer) {
 
 	if(lexer->finished | lexer->error) {
 		return EOF;
 	}
 
-	if(lexer->track_position >= lexer->track->content_length) {
+	if(((TrackLexer*) lexer)->track_position >= ((TrackLexer*) lexer)->track->content_length) {
 		return EOF;
 	}
 
-	return (int) ((char*) (lexer->track->content))[lexer->track_position];
+	return (int) ((char*) (((TrackLexer*) lexer)->track->content))[((TrackLexer*) lexer)->track_position];
 }
 
-static void update_lineinfo(TrackLexer* lexer) {
-
-	lexer->saved_line = lexer->line;
-	lexer->saved_col = lexer->col;
-
-	return;
-}
-
-static void reset_buffer_info(TrackLexer* lexer) {
-
-	lexer->buffer = NULL;
-	lexer->buffer_capacity = 0;
-	lexer->buffer_length = 0;
-
-	return;
-}
-
-static void free_buffer(TrackLexer* lexer) {
-
-	free(lexer->buffer);
-	reset_buffer_info(lexer);
-
-	return;
-}
-
-static int append_char_to_buffer(TrackLexer* lexer, char c) {
-
-	if(lexer == NULL) {
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
-	if(lexer->buffer == NULL) {
-
-		if(lexer->buffer_capacity != 0 || lexer->buffer_length != 0) {
-			lexer->error = true;
-			lexer->finished = true;
-			return ERROR_CODE_INVALID_STATE;
-		}
-
-		lexer->buffer = malloc(lexer->initial_buffer_capacity);
-		if(lexer->buffer == NULL) {
-			lexer->error = true;
-			lexer->finished = true;
-			return ERROR_CODE_MALLOC_FAILURE;
-		}
-
-		lexer->buffer_capacity = lexer->initial_buffer_capacity;
-	}
-
-	else if(lexer->buffer_capacity == 0 || lexer->buffer_length == 0) {
-		lexer->error = true;
-		lexer->finished = true;
-		return ERROR_CODE_INVALID_STATE;
-	}
-
-	if(lexer->buffer_length >= lexer->buffer_capacity) {
-
-		size_t new_capacity = lexer->buffer_capacity * 2;
-		if(new_capacity <= lexer->buffer_capacity) {
-			lexer->error = true;
-			lexer->finished = true;
-			return ERROR_CODE_INTEGER_OVERFLOW;
-		}
-
-		char* new_buffer = realloc(lexer->buffer, new_capacity);
-		if(new_buffer == NULL) {
-			lexer->error = true;
-			lexer->finished = true;
-			return ERROR_CODE_MALLOC_FAILURE;
-		}
-
-		lexer->buffer = new_buffer;
-		lexer->buffer_capacity = new_capacity;
-	}
-
-	lexer->buffer[lexer->buffer_length] = c;
-
-	size_t new_length = lexer->buffer_length + 1;
-
-	if(new_length <= lexer->buffer_length) {
-		lexer->error = true;
-		lexer->finished = true;
-		return ERROR_CODE_INTEGER_OVERFLOW;
-	}
-
-	lexer->buffer_length = new_length;
-
-	return 0;
-}
-
-static int append_current_symbol_to_buffer(TrackLexer* lexer) {
-
-	if(lexer == NULL) {
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
-	return append_char_to_buffer(lexer, lexer->symbol);
-}
-
-static int finalize_buffer(TrackLexer* lexer) {
-	return append_char_to_buffer(lexer, (char) '\0');
-}
-
-// --------
-
-int TrackLexer_init_at(TrackLexer* lexer, Token* track) {
-
-	if(lexer == NULL) {
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
-	if(track == NULL || track->type != TOKEN_TRACK || track->content == NULL) {
-		lexer->error = true;
-		lexer->finished = true;
-		return ERROR_CODE_INVALID_ARGUMENT;
-	}
-
-	lexer->initial_buffer_capacity = 16;
-	lexer->symbol = '\0';
-	lexer->line = track->line;
-	lexer->col = track->col;
-	lexer->finished = false;
-	lexer->error = false;
-	lexer->state = TRACK_LEXER_STATE_START;
-	lexer->track = track;
-	lexer->track_position = 0;
-
-	update_lineinfo(lexer);
-	reset_buffer_info(lexer);
-
-	return 0;
-}
-
-void TrackLexer_destroy_at(TrackLexer* lexer) {
-
-	if(lexer == NULL) {
-		return;
-	}
-
-	free_buffer(lexer);
-
-	return;
-}
-
-int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
+static int TrackLexer_get_next_bar_internal(AbstractLexer* lexer, BarToken* token) {
 
 	if(lexer == NULL || lexer->finished || lexer->error) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -222,7 +71,7 @@ int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
 
 		int status = 0;
 
-		switch(lexer->state) {
+		switch(((TrackLexer*) lexer)->state) {
 
 			case TRACK_LEXER_STATE_START:
 
@@ -239,7 +88,7 @@ int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
 						}
 
 						update_lineinfo(lexer);
-						lexer->state = TRACK_LEXER_STATE_EXPECTING_BAR;
+						((TrackLexer*) lexer)->state = TRACK_LEXER_STATE_EXPECTING_BAR;
 
 						continue;
 
@@ -278,7 +127,7 @@ int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
 							return ERROR_CODE_UNEXPECTED_CHARACTER;
 						}
 
-						lexer->state = TRACK_LEXER_STATE_EXPECTING_COMMENT;
+						((TrackLexer*) lexer)->state = TRACK_LEXER_STATE_EXPECTING_COMMENT;
 
 						continue;
 
@@ -293,7 +142,7 @@ int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
 
 					case '\n':
 					case '\r':
-						lexer->state = TRACK_LEXER_STATE_EXPECTING_BAR;
+						((TrackLexer*) lexer)->state = TRACK_LEXER_STATE_EXPECTING_BAR;
 						continue;
 
 					default:
@@ -309,5 +158,42 @@ int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
 
 	lexer->finished = true;
 	return 0;
+}
+
+// --------
+
+int TrackLexer_init_at(TrackLexer* lexer, Token* track) {
+
+	int status = AbstractLexer_init_at((AbstractLexer*) lexer, 16);
+	if(status != 0) {
+		return status;
+	}
+
+	if(track == NULL || track->type != TOKEN_TRACK || track->content == NULL) {
+		((AbstractLexer*) lexer)->error = true;
+		((AbstractLexer*) lexer)->finished = true;
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	lexer->state = TRACK_LEXER_STATE_START;
+	lexer->track = track;
+	lexer->track_position = 0;
+
+	return 0;
+}
+
+void TrackLexer_destroy_at(TrackLexer* lexer) {
+
+	if(lexer == NULL) {
+		return;
+	}
+
+	free_buffer((AbstractLexer*) lexer);
+
+	return;
+}
+
+int TrackLexer_get_next_bar(TrackLexer* lexer, BarToken* token) {
+	return TrackLexer_get_next_bar_internal((AbstractLexer*) lexer, token);
 }
 

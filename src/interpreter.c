@@ -39,14 +39,18 @@ static int play_track_token(Player* player, Instrument* instrument, Token* track
 
 	TrackLexer lexer;
 	BarToken bar;
-	int status;
+
+	int status = 0;
+
+	memset(&lexer, 0, sizeof(Lexer));
+	memset(&bar, 0, sizeof(BarToken));
 
 	status = TrackLexer_init_at(&lexer, track);
 	if(status != 0) {
 		return status;
 	}
 
-	while(status == 0 && destroy_bar_token(&bar) && !lexer.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
+	while(status == 0 && destroy_bar_token(&bar) && !lexer.super.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
 		status = play_bar_token(player, instrument, &bar);
 	}
 
@@ -134,7 +138,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		return status;
 	}
 
-	while(!interpreter->finished && destroy_token(&token) && (status = Lexer_get_next_token(&lexer, &token)) == 0 && !lexer.finished) {
+	while(!interpreter->finished && destroy_token(&token) && (status = Lexer_get_next_token(&lexer, &token)) == 0 && !lexer.super.finished) {
 
 		if(token.type == TOKEN_COMMENT) {
 			continue;
@@ -187,8 +191,8 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		}
 	}
 
-	if(lexer.error) {
-		fprintf(stderr, "Error at %s:%u:%u\n", interpreter->filename, lexer.line, lexer.col);
+	if(lexer.super.error) {
+		fprintf(stderr, "Error at %s:%u:%u\n", interpreter->filename, lexer.super.line, lexer.super.col);
 		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
