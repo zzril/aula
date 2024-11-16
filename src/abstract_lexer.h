@@ -3,6 +3,7 @@
 // --------
 
 #include <stdbool.h>
+#include <stddef.h>
 
 // --------
 
@@ -38,6 +39,8 @@ void free_buffer(AbstractLexer* lexer);
 int append_char_to_buffer(AbstractLexer* lexer, char c);
 int append_current_symbol_to_buffer(AbstractLexer* lexer);
 int finalize_buffer(AbstractLexer* lexer);
+
+int AbstractLexer_init_at(AbstractLexer* lexer, size_t initial_buffer_capacity);
 
 // --------
 #endif

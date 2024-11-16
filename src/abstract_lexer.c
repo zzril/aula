@@ -108,3 +108,22 @@ int finalize_buffer(AbstractLexer* lexer) {
 	return append_char_to_buffer(lexer, (char) '\0');
 }
 
+int AbstractLexer_init_at(AbstractLexer* lexer, size_t initial_buffer_capacity) {
+
+	if(lexer == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	lexer->initial_buffer_capacity = initial_buffer_capacity;
+	lexer->line = 1;
+	lexer->col = 1;
+	lexer->symbol = '\0';
+	lexer->finished = false;
+	lexer->error = false;
+
+	update_lineinfo(lexer);
+	reset_buffer_info(lexer);
+
+	return 0;
+}
+
