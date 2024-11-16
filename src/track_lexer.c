@@ -26,7 +26,7 @@ static int advance(AbstractLexer* lexer) {
 		return EOF;
 	}
 
-	lexer->symbol = ((char*) (((TrackLexer*) lexer)->track->content))[((TrackLexer*) lexer)->track_position];
+	lexer->symbol = ((char*) (((TrackLexer*) lexer)->track->content.buffer))[((TrackLexer*) lexer)->track_position];
 	(((TrackLexer*) lexer)->track_position)++;
 	(lexer->col)++;
 
@@ -48,7 +48,7 @@ static int peek(AbstractLexer* lexer) {
 		return EOF;
 	}
 
-	return (int) ((char*) (((TrackLexer*) lexer)->track->content))[((TrackLexer*) lexer)->track_position];
+	return (int) ((char*) (((TrackLexer*) lexer)->track->content.buffer))[((TrackLexer*) lexer)->track_position];
 }
 
 static int TrackLexer_get_next_bar_internal(AbstractLexer* lexer, BarToken* token) {
@@ -169,7 +169,7 @@ int TrackLexer_init_at(TrackLexer* lexer, Token* track) {
 		return status;
 	}
 
-	if(track == NULL || track->type != TOKEN_TRACK || track->content == NULL) {
+	if(track == NULL || track->type != TOKEN_TRACK || track->content.buffer == NULL) {
 		((AbstractLexer*) lexer)->error = true;
 		((AbstractLexer*) lexer)->finished = true;
 		return ERROR_CODE_INVALID_ARGUMENT;

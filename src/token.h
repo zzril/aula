@@ -18,13 +18,19 @@ typedef enum TokenType {
 	TOKEN_INVALID = 0,
 	TOKEN_KEYWORD_BPM,
 	TOKEN_KEYWORD_TRACK,
+	TOKEN_LITERAL_INTEGER,
 	TOKEN_TRACK,
 	TOKEN_COMMENT,
 	NUM_TOKEN_TYPES,
 } TokenType;
 
+typedef union TokenContent {
+	char* buffer;
+	int literal_integer;
+} TokenContent;
+
 struct Token {
-	void* content;
+	TokenContent content;
 	size_t content_length;
 	TokenType type;
 	unsigned int line;
@@ -35,7 +41,7 @@ struct Token {
 
 void Token_init_at(Token* token, TokenType type, unsigned int line, unsigned int col);
 
-void Token_set_content(Token* token, void* content, size_t content_length);
+int Token_set_content_buffer(Token* token, char* buffer, size_t length);
 
 void Token_destroy_at(Token* token);
 
