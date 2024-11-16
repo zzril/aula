@@ -94,7 +94,7 @@ static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar)
 void Interpreter_init_at(Interpreter* interpreter) {
 
 	interpreter->filename = "";
-	interpreter->state = INTERPRETER_STATE_EXPECTING_TRACK;
+	interpreter->state = INTERPRETER_STATE_START;
 	interpreter->error_state = INTERPRETER_ERROR_STATE_UNKNOWN_ERROR;
 	interpreter->finished = false;
 	interpreter->error = false;
