@@ -121,6 +121,16 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 					case '\t':
 						continue;
 
+					case 'b':
+
+						if(verify_keyword(lexer, "bpm:") == false) {
+							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						}
+
+						Token_init_at(token, TOKEN_KEYWORD_BPM, lexer->saved_line, lexer->saved_col);
+
+						return 0;
+
 					case 't':
 
 						if(verify_keyword(lexer, "track:") == false) {
@@ -130,7 +140,6 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						Token_init_at(token, TOKEN_KEYWORD_TRACK, lexer->saved_line, lexer->saved_col);
 
 						return 0;
-
 
 					case '|':
 
