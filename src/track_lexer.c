@@ -51,13 +51,11 @@ static int peek(TrackLexer* lexer) {
 		return EOF;
 	}
 
-	size_t read_position = lexer->track_position + 1;
- 
-	if(read_position >= lexer->track->content_length) {
+	if(lexer->track_position >= lexer->track->content_length) {
 		return EOF;
 	}
 
-	return (int) ((char*) (lexer->track->content))[read_position];
+	return (int) ((char*) (lexer->track->content))[lexer->track_position];
 }
 
 static void update_lineinfo(TrackLexer* lexer) {
