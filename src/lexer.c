@@ -210,7 +210,10 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						}
 
 						Token_init_at(token, TOKEN_TRACK, lexer->saved_line, lexer->saved_col);
-						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						status = Token_set_content_buffer(token, lexer->buffer, lexer->buffer_length);
+						if(status != 0) {
+							return status;
+						}
 						reset_buffer_info(lexer);
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
@@ -234,7 +237,10 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						}
 
 						Token_init_at(token, TOKEN_COMMENT, lexer->saved_line, lexer->saved_col);
-						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						status = Token_set_content_buffer(token, lexer->buffer, lexer->buffer_length);
+						if(status != 0) {
+							return status;
+						}
 						reset_buffer_info(lexer);
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
