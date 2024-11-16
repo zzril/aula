@@ -2,8 +2,7 @@
 #define TRACK_LEXER_H
 // --------
 
-#include <stdbool.h>
-
+#include "abstract_lexer.h"
 #include "bar_token.h"
 #include "token.h"
 
@@ -25,17 +24,7 @@ typedef enum TrackLexerState {
 } TrackLexerState;
 
 struct TrackLexer {
-	char* buffer;
-	size_t buffer_capacity;
-	size_t buffer_length;
-	size_t initial_buffer_capacity;
-	unsigned int line;
-	unsigned int col;
-	unsigned int saved_line;
-	unsigned int saved_col;
-	char symbol;
-	bool finished;
-	bool error;
+	AbstractLexer super;
 	TrackLexerState state;
 	Token* track;
 	size_t track_position;

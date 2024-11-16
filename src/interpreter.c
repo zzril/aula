@@ -50,7 +50,7 @@ static int play_track_token(Player* player, Instrument* instrument, Token* track
 		return status;
 	}
 
-	while(status == 0 && destroy_bar_token(&bar) && !lexer.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
+	while(status == 0 && destroy_bar_token(&bar) && !lexer.super.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
 		status = play_bar_token(player, instrument, &bar);
 	}
 
