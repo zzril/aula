@@ -26,7 +26,7 @@ typedef enum TokenType {
 
 typedef union TokenContent {
 	char* buffer;
-	int literal_integer;
+	int integer;
 } TokenContent;
 
 struct Token {
