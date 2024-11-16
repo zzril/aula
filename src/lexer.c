@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <string.h>
@@ -8,15 +7,22 @@
 
 // --------
 
-static int advance(Lexer* lexer);
+static int advance(AbstractLexer* lexer);
+static int peek(AbstractLexer* lexer);
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first);
+static bool verify_keyword(AbstractLexer* lexer, char* keyword);
+
+static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token);
 
 // --------
 
-static int advance(Lexer* lexer) {
+static int advance(AbstractLexer* lexer) {
 
-	int c = getc(lexer->stream);
+	if(lexer->finished | lexer->error) {
+		return EOF;
+	}
+
+	int c = getc(((Lexer*) lexer)->stream);
 	if(c == EOF) {
 		lexer->finished = true;
 		return c;
@@ -33,93 +39,63 @@ static int advance(Lexer* lexer) {
 	return c;
 }
 
-static int fill_buffer_until(Lexer* lexer, char** buffer, size_t initial_capacity, size_t* length, char endchar, bool skip_first) {
+static int peek(AbstractLexer* lexer) {
 
-	int c;
-	size_t capacity = initial_capacity;
-
-	if(*buffer != NULL || initial_capacity == 0 || *length != 0) {
-		return ERROR_CODE_INVALID_ARGUMENT;
+	if(lexer->finished | lexer->error) {
+		return EOF;
 	}
 
-	*buffer = malloc(initial_capacity);
-
-	if(*buffer == NULL) {
-		return ERROR_CODE_MALLOC_FAILURE;
+	int c = getc(((Lexer*) lexer)->stream);
+	if(c == EOF) {
+		lexer->finished = true;
+		return c;
 	}
 
-	if(!skip_first) {
-		(*buffer)[*length] = lexer->symbol;
-		(*length)++;
-	}
-
-	while((c = advance(lexer)) != EOF) {
-
-		if(lexer->symbol == endchar) {
-			(*buffer)[*length] = '\0';
-			return 0;
-		}
-
-		if(*length >= capacity - 1) {
-
-			char* new_buffer;
-
-			capacity *= 2;
-
-			new_buffer = realloc(*buffer, capacity);
-			if(new_buffer == NULL) {
-				return ERROR_CODE_MALLOC_FAILURE;
-			}
-
-			*buffer = new_buffer;
-		}
-
-		(*buffer)[*length] = lexer->symbol;
-		(*length)++;
-	}
-
-	(*buffer)[*length] = '\0';
-
-	lexer->finished = true;
-	lexer->error = true;
-
-	return ERROR_CODE_UNEXPECTED_EOF;
-}
-
-// --------
-
-int Lexer_init_at(Lexer* lexer, FILE* stream) {
-
-	lexer->stream = stream;
-	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
-	lexer->symbol = '\0';
-
-	if(lexer->stream == NULL) {
-		lexer->line = 0;
-		lexer->col = 0;
+	int rv = ungetc(c, ((Lexer*) lexer)->stream);
+	if(rv != c) {
 		lexer->finished = true;
 		lexer->error = true;
-		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	lexer->line = 1;
-	lexer->col = 1;
-
-	lexer->finished = false;
-	lexer->error = false;
-
-	return 0;
+	return rv;
 }
 
-int Lexer_get_next_token(Lexer* lexer, Token* token) {
+static bool verify_keyword(AbstractLexer* lexer, char* keyword) {
 
-	if(lexer == NULL || (lexer->finished | lexer->error)) {
+	size_t index = 0;
+	size_t length = strlen(keyword);
+
+	if(length == 0) {
+		return true;
+	}
+
+	while(true) {
+
+		if(lexer->symbol != keyword[index]) {
+			return false;
+		}
+
+		index++;
+
+		if(index >= length) {
+			return true;
+		}
+
+		if(advance(lexer) == EOF) {
+			return false;
+		}
+	}
+}
+
+static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
+
+	if(lexer == NULL || lexer->finished || lexer->error) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	if(token == NULL) {
-		lexer->finished = true;
 		lexer->error = true;
+		lexer->finished = true;
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
@@ -130,12 +106,12 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 	while((c = advance(lexer)) != EOF) {
 
 		int status = 0;
-		char* buffer = NULL;
-		size_t length = 0;
 
-		switch(lexer->state) {
+		switch(((Lexer*) lexer)->state) {
 
 			case LEXER_STATE_EXPECTING_NEW_TOKEN:
+
+				update_lineinfo(lexer);
 
 				switch(lexer->symbol) {
 
@@ -145,13 +121,40 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 					case '\t':
 						continue;
 
+					case 't':
+
+						if(verify_keyword(lexer, "track:") == false) {
+							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						}
+
+						Token_init_at(token, TOKEN_KEYWORD_TRACK, lexer->saved_line, lexer->saved_col);
+
+						return 0;
+
+
 					case '|':
 
-						lexer->state = LEXER_STATE_EXPECTING_TRACK_START;
+						if(peek(lexer) != (int) '|') {
+							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						}
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_TRACK;
+
 						continue;
 
 					case '/':
-						lexer->state = LEXER_STATE_EXPECTING_COMMENT;
+
+						if(advance(lexer) != (int) '/') {
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
+						}
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_COMMENT;
+
 						continue;
 
 					default:
@@ -160,19 +163,12 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 
-			case LEXER_STATE_EXPECTING_TRACK_START:
+			case LEXER_STATE_EXPECTING_TRACK:
 
-				if(lexer->symbol != '|') {
-					lexer->error = true;
-					lexer->finished = true;
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+				status = append_current_symbol_to_buffer(lexer);
+				if(status != 0) {
+					return status;
 				}
-
-				lexer->state = LEXER_STATE_EXPECTING_BAR;
-				Token_init_at(token, TOKEN_TRACK_START, lexer->line, lexer->col);
-				return 0;
-
-			case LEXER_STATE_EXPECTING_BAR:
 
 				switch(lexer->symbol) {
 
@@ -183,52 +179,65 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 						continue;
 
 					case '|':
-						lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
-						Token_init_at(token, TOKEN_TRACK_END, lexer->line, lexer->col);
+
+						if(peek(lexer) != (int) '|') {
+							continue;
+						}
+
+						if(advance(lexer) != '|') {
+							lexer->error = true;
+							lexer->finished = true;
+							return ERROR_CODE_INVALID_STATE;
+						}
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						status = finalize_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						Token_init_at(token, TOKEN_TRACK, lexer->saved_line, lexer->saved_col);
+						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						reset_buffer_info(lexer);
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+
 						return 0;
 
-					case '/':
-						lexer->state = LEXER_STATE_EXPECTING_BAR_COMMENT;
-						continue;
-
 					default:
-						break;
+						continue;
 					}
 
-				status = fill_buffer_until(lexer, &buffer, 16, &length, '|', false);
-				if(status != 0) {
-					return status;
-				}
-
-				Token_init_at(token, TOKEN_BAR, lexer->line, lexer->col - length);
-				Token_set_content(token, buffer, length);
-
-				buffer = NULL;
-				length = 0;
-
-				return 0;
-
 			case LEXER_STATE_EXPECTING_COMMENT:
-			case LEXER_STATE_EXPECTING_BAR_COMMENT:
 
-				if(!(lexer->symbol == '/')) {
-					return ERROR_CODE_UNEXPECTED_CHARACTER;
+				switch(lexer->symbol) {
+
+					case '\n':
+					case '\r':
+
+						status = finalize_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						Token_init_at(token, TOKEN_COMMENT, lexer->saved_line, lexer->saved_col);
+						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						reset_buffer_info(lexer);
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+
+						return 0;
+
+					default:
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
 				}
-
-				status = fill_buffer_until(lexer, &buffer, 16, &length, lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? '|': '\n', true);
-				if(status != 0) {
-					return status;
-				}
-
-				Token_init_at(token, TOKEN_COMMENT, lexer->line, lexer->col - length);
-				Token_set_content(token, buffer, length);
-
-				buffer = NULL;
-				length = 0;
-
-				lexer->state = lexer->state == LEXER_STATE_EXPECTING_BAR_COMMENT? LEXER_STATE_EXPECTING_BAR: LEXER_STATE_EXPECTING_NEW_TOKEN;
-
-				return 0;
 
 			default:
 				lexer->error = true;
@@ -239,5 +248,41 @@ int Lexer_get_next_token(Lexer* lexer, Token* token) {
 
 	lexer->finished = true;
 	return 0;
+}
+
+// --------
+
+int Lexer_init_at(Lexer* lexer, FILE* stream) {
+
+	int status = AbstractLexer_init_at((AbstractLexer*) lexer, 256);
+	if(status != 0) {
+		return status;
+	}
+
+	if(stream == NULL) {
+		((AbstractLexer*) lexer)->error = true;
+		((AbstractLexer*) lexer)->finished = true;
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	lexer->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+	lexer->stream = stream;
+
+	return 0;
+}
+
+void Lexer_destroy_at(Lexer* lexer) {
+
+	if(lexer == NULL) {
+		return;
+	}
+
+	free_buffer((AbstractLexer*) lexer);
+
+	return;
+}
+
+int Lexer_get_next_token(Lexer* lexer, Token* token) {
+	return Lexer_get_next_token_internal((AbstractLexer*) lexer, token);
 }
 

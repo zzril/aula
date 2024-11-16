@@ -188,10 +188,11 @@ int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 
 				switch(comp->symbol) {
 
-					case ' ':
+					case '\0':
+					case '\t':
 					case '\n':
 					case '\r':
-					case '\t':
+					case ' ':
 						continue;
 
 					case 'A':
