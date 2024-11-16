@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include <errno.h>
 #include <string.h>
 
 #include "error_codes.h"
@@ -106,6 +107,8 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 	while((c = advance(lexer)) != EOF) {
 
 		int status = 0;
+		long integer_literal = 0;
+		char* endptr = NULL;
 
 		switch(((Lexer*) lexer)->state) {
 
@@ -119,6 +122,26 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 					case '\n':
 					case '\r':
 					case '\t':
+						continue;
+
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_LITERAL_INTEGER;
+
 						continue;
 
 					case 'b':
@@ -163,6 +186,77 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						}
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_COMMENT;
+
+						continue;
+
+					default:
+						lexer->error = true;
+						lexer->finished = true;
+						return ERROR_CODE_UNEXPECTED_CHARACTER;
+				}
+
+			case LEXER_STATE_EXPECTING_LITERAL_INTEGER:
+
+				switch(lexer->symbol) {
+
+					case ' ':
+					case '\n':
+					case '\r':
+					case '\t':
+
+						status = finalize_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						Token_init_at(token, TOKEN_LITERAL_INTEGER, lexer->saved_line, lexer->saved_col);
+
+						errno = 0;
+						integer_literal = strtol(lexer->buffer, &endptr, 10);
+
+						switch(errno) {
+
+							case 0:
+								break;
+
+							case ERANGE:
+								return ERROR_CODE_INTEGER_OVERFLOW;
+
+							default:
+								return ERROR_CODE_INVALID_STATE;
+						}
+
+						if(*endptr != '\0') {
+							return ERROR_CODE_INVALID_STATE;
+						}
+
+						token->content.integer = (int) integer_literal;
+
+						if((long) (token->content.integer) != integer_literal) {
+							return ERROR_CODE_INTEGER_OVERFLOW;
+						}
+
+						reset_buffer_info(lexer);
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+
+						return 0;
+
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
 
 						continue;
 
