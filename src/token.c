@@ -7,7 +7,7 @@
 
 // --------
 
-static const char* TOKEN_KEYWORDS[NUM_TOKEN_KEYWORD_TYPES] = {
+const char* TOKEN_KEYWORDS[NUM_TOKEN_KEYWORD_TYPES] = {
 	[TOKEN_INVALID] = "<invalid token>",
 	[TOKEN_KEYWORD_BPM] = "bpm:",
 	[TOKEN_KEYWORD_TRACK] = "track:",

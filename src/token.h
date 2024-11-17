@@ -41,6 +41,10 @@ struct Token {
 
 // --------
 
+extern const char* TOKEN_KEYWORDS[NUM_TOKEN_KEYWORD_TYPES];
+
+// --------
+
 void Token_init_at(Token* token, TokenType type, unsigned int line, unsigned int col);
 
 int Token_set_content_buffer(Token* token, char* buffer, size_t length);

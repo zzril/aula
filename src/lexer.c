@@ -11,7 +11,7 @@
 static int advance(AbstractLexer* lexer);
 static int peek(AbstractLexer* lexer);
 
-static bool verify_keyword(AbstractLexer* lexer, char* keyword);
+static bool verify_keyword(AbstractLexer* lexer, const char* keyword);
 
 static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token);
 
@@ -61,7 +61,7 @@ static int peek(AbstractLexer* lexer) {
 	return rv;
 }
 
-static bool verify_keyword(AbstractLexer* lexer, char* keyword) {
+static bool verify_keyword(AbstractLexer* lexer, const char* keyword) {
 
 	size_t index = 0;
 	size_t length = strlen(keyword);
@@ -146,8 +146,8 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 
 					case 'b':
 
-						if(verify_keyword(lexer, "bpm:") == false) {
-							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						if(verify_keyword(lexer, TOKEN_KEYWORDS[TOKEN_KEYWORD_BPM]) == false) {
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
 						}
 
 						Token_init_at(token, TOKEN_KEYWORD_BPM, lexer->saved_line, lexer->saved_col);
@@ -156,8 +156,8 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 
 					case 't':
 
-						if(verify_keyword(lexer, "track:") == false) {
-							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						if(verify_keyword(lexer, TOKEN_KEYWORDS[TOKEN_KEYWORD_TRACK]) == false) {
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
 						}
 
 						Token_init_at(token, TOKEN_KEYWORD_TRACK, lexer->saved_line, lexer->saved_col);
