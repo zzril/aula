@@ -202,41 +202,17 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 			case INTERPRETER_ERROR_STATE_UNEXPECTED_TOKEN:
 
-				fprintf(stderr, "%s:%u:%u: Unexpected token\n", interpreter->filename, token.line, token.col);
-
-				switch(token.type) {
-
-					case TOKEN_TRACK:
-					case TOKEN_COMMENT:
-
-						if(token.content.buffer != NULL) {
-							fputs((char*) (token.content.buffer), stderr);
-						}
-						break;
-
-					default:
-						break;
-				}
+				fprintf(stderr, "%s:%u:%u: Unexpected token: ", interpreter->filename, token.line, token.col);
+				Token_print(&token, stderr);
+				fputs("\n", stderr);
 
 				break;
 
 			case INTERPRETER_ERROR_STATE_INTERNAL_ERROR:
 
-				switch(token.type) {
-
-					case TOKEN_TRACK:
-					case TOKEN_COMMENT:
-
-						if(token.content.buffer != NULL) {
-							fprintf(stderr, "Internal interpreter error while processing %s:%u:%u: %s\n", interpreter->filename, token.line, token.col, (char*) (token.content.buffer));
-							break;
-						}
-
-					default:
-
-						fprintf(stderr, "Internal interpreter error while processing %s:%u:%u\n", interpreter->filename, token.line, token.col);
-
-				}
+				fprintf(stderr, "%s:%u:%u: Internal interpreter error while processing: ", interpreter->filename, token.line, token.col);
+				Token_print(&token, stderr);
+				fputs("\n", stderr);
 
 				break;
 
