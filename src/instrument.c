@@ -46,7 +46,7 @@ static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_of
 	}
 
 	if(!Note_is_rest(note)) {
-		add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, SAMPLE_FRAMES_PER_SECOND, 1, Note_get_frequency(note), 0);
+		add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, Config_get_framerate(), 1, Note_get_frequency(note), 0);
 	}
 
 	instrument->buffer_position += samples_to_write;
@@ -63,7 +63,7 @@ static bool is_buffer_full(Instrument* instrument) {
 int Instrument_init_at(Instrument* instrument, void* instrument_definition) {
 
 	instrument->instrument_definition = instrument_definition;
-	instrument->num_samples = SAMPLE_FRAMES_PER_BAR;
+	instrument->num_samples = Config_get_sample_frames_per_bar();
 
 	instrument->buffer = reallocarray(NULL, instrument->num_samples, sizeof(float));
 	if(instrument->buffer == NULL) {
