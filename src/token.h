@@ -3,6 +3,7 @@
 // --------
 
 #include <stddef.h>
+#include <stdio.h>
 
 // --------
 
@@ -18,6 +19,7 @@ typedef enum TokenType {
 	TOKEN_INVALID = 0,
 	TOKEN_KEYWORD_BPM,
 	TOKEN_KEYWORD_TRACK,
+	NUM_TOKEN_KEYWORD_TYPES,
 	TOKEN_LITERAL_INTEGER,
 	TOKEN_TRACK,
 	TOKEN_COMMENT,
@@ -39,11 +41,17 @@ struct Token {
 
 // --------
 
+extern const char* TOKEN_KEYWORDS[NUM_TOKEN_KEYWORD_TYPES];
+
+// --------
+
 void Token_init_at(Token* token, TokenType type, unsigned int line, unsigned int col);
 
 int Token_set_content_buffer(Token* token, char* buffer, size_t length);
 
 void Token_destroy_at(Token* token);
+
+int Token_print(Token* token, FILE* stream);
 
 // --------
 #endif
