@@ -51,7 +51,7 @@ int Token_set_content_buffer(Token* token, char* buffer, size_t length);
 
 void Token_destroy_at(Token* token);
 
-void Token_print(Token* token, FILE* stream);
+int Token_print(Token* token, FILE* stream);
 
 // --------
 #endif

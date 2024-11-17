@@ -62,10 +62,10 @@ void Token_destroy_at(Token* token) {
 	return;
 }
 
-void Token_print(Token* token, FILE* stream) {
+int Token_print(Token* token, FILE* stream) {
 
 	if(token == NULL || stream == NULL) {
-		return;
+		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	switch(token->type) {
@@ -73,20 +73,20 @@ void Token_print(Token* token, FILE* stream) {
 		case TOKEN_KEYWORD_BPM:
 		case TOKEN_KEYWORD_TRACK:
 			fputs(TOKEN_KEYWORDS[token->type], stream);
-			return;
+			return 0;
 
 		case TOKEN_TRACK:
 		case TOKEN_COMMENT:
 			fputs(token->content.buffer, stream);
-			return;
+			return 0;
 
 		case TOKEN_LITERAL_INTEGER:
 			fprintf(stream, "%d", token->content.integer);
-			return;
+			return 0;
 
 		default:
 			fputs(TOKEN_KEYWORDS[TOKEN_INVALID], stream);
-			return;
+			return 0;
 	}
 }
 
