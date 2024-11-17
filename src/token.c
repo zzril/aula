@@ -77,7 +77,17 @@ int Token_print(Token* token, FILE* stream) {
 
 		case TOKEN_TRACK:
 		case TOKEN_COMMENT:
+
+			if(token->content.buffer == NULL) {
+				return ERROR_CODE_INVALID_STATE;
+			}
+
+			if(token->content_length == 0) {
+				return 0;
+			}
+
 			fputs(token->content.buffer, stream);
+
 			return 0;
 
 		case TOKEN_LITERAL_INTEGER:
