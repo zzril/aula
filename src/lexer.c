@@ -181,8 +181,13 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 
 					case '/':
 
-						if(advance(lexer) != (int) '/') {
-							return ERROR_CODE_UNEXPECTED_CHARACTER;
+						if(peek(lexer) != (int) '/') {
+							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						}
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
 						}
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_COMMENT;

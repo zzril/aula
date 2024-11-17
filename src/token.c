@@ -7,6 +7,14 @@
 
 // --------
 
+static const char* TOKEN_KEYWORDS[NUM_TOKEN_KEYWORD_TYPES] = {
+	[TOKEN_INVALID] = "<invalid token>",
+	[TOKEN_KEYWORD_BPM] = "bpm:",
+	[TOKEN_KEYWORD_TRACK] = "track:",
+};
+
+// --------
+
 void Token_init_at(Token* token, TokenType type, unsigned int line, unsigned int col) {
 
 	token->type = type;
@@ -52,5 +60,33 @@ void Token_destroy_at(Token* token) {
 	memset(token, 0, sizeof(Token));
 
 	return;
+}
+
+void Token_print(Token* token, FILE* stream) {
+
+	if(token == NULL || stream == NULL) {
+		return;
+	}
+
+	switch(token->type) {
+
+		case TOKEN_KEYWORD_BPM:
+		case TOKEN_KEYWORD_TRACK:
+			fputs(TOKEN_KEYWORDS[token->type], stream);
+			return;
+
+		case TOKEN_TRACK:
+		case TOKEN_COMMENT:
+			fputs(token->content.buffer, stream);
+			return;
+
+		case TOKEN_LITERAL_INTEGER:
+			fprintf(stream, "%d", token->content.integer);
+			return;
+
+		default:
+			fputs(TOKEN_KEYWORDS[TOKEN_INVALID], stream);
+			return;
+	}
 }
 
