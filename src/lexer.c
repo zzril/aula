@@ -351,6 +351,7 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						if(status != 0) {
 							return status;
 						}
+						continue;
 				}
 
 			default:
