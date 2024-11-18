@@ -11,17 +11,19 @@
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_off);
+static int add_note(Instrument* instrument, Note* note, bool* done);
 static bool is_buffer_full(Instrument* instrument);
+static size_t update_granularity(Instrument* instrument, const Note* note);
 
 // --------
 
-static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_off) {
+static int add_note(Instrument* instrument, Note* note, bool* done) {
 
-	size_t samples_to_write;
 	size_t remaining_buffer_space;
+	size_t samples_to_write;
 
-	if(instrument == NULL || note == NULL || done == NULL || cut_off == NULL) {
+
+	if(instrument == NULL || note == NULL || done == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
@@ -31,31 +33,48 @@ static int add_note(Instrument* instrument, Note* note, bool* done, bool* cut_of
 	}
 
 	*done = false;
-	*cut_off = false;
 
 	remaining_buffer_space = instrument->num_samples - instrument->buffer_position;
 	samples_to_write = Note_get_length_in_samples(note);
 
-	if(samples_to_write > remaining_buffer_space) {
-		samples_to_write = remaining_buffer_space;
-		*cut_off = true;
-	}
+	update_granularity(instrument, note);
 
-	if(samples_to_write == remaining_buffer_space) {
-		*done = true;
+	if(samples_to_write > remaining_buffer_space) {
+
+		if(samples_to_write - remaining_buffer_space >= instrument->granularity / 2) {
+			*done = true;
+			return ERROR_CODE_INSTRUMENT_BUFFER_OVERFLOW;
+		}
+
+		samples_to_write = remaining_buffer_space;
 	}
 
 	if(!Note_is_rest(note)) {
-		add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, SAMPLE_FRAMES_PER_SECOND, 1, Note_get_frequency(note), 0);
+		add_sine(instrument->buffer + instrument->buffer_position, samples_to_write, Config_get_framerate(), 1, Note_get_frequency(note), 0);
 	}
 
 	instrument->buffer_position += samples_to_write;
+
+	if(is_buffer_full(instrument)) {
+		*done = true;
+	}
 
 	return 0;
 }
 
 static bool is_buffer_full(Instrument* instrument) {
-	return instrument->buffer_position >= instrument->num_samples;
+	return instrument->buffer_position >= instrument->num_samples || instrument->num_samples - instrument->buffer_position < instrument->granularity;
+}
+
+static size_t update_granularity(Instrument* instrument, const Note* note) {
+
+	size_t note_granularity = Note_get_granularity_in_samples(note);
+
+	if(note_granularity < instrument->granularity) {
+		instrument->granularity = note_granularity;
+	}
+
+	return instrument->granularity;
 }
 
 // --------
@@ -63,7 +82,7 @@ static bool is_buffer_full(Instrument* instrument) {
 int Instrument_init_at(Instrument* instrument, void* instrument_definition) {
 
 	instrument->instrument_definition = instrument_definition;
-	instrument->num_samples = SAMPLE_FRAMES_PER_BAR;
+	instrument->num_samples = Config_get_sample_frames_per_bar();
 
 	instrument->buffer = reallocarray(NULL, instrument->num_samples, sizeof(float));
 	if(instrument->buffer == NULL) {
@@ -79,6 +98,7 @@ int Instrument_init_at(Instrument* instrument, void* instrument_definition) {
 void reset_buffer(Instrument* instrument) {
 	generate_silence(instrument->buffer, instrument->num_samples);
 	instrument->buffer_position = 0;
+	instrument->granularity = instrument->num_samples;
 	return;
 }
 
@@ -100,18 +120,12 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 	int status = 0;
 	bool provider_done = false;
 	bool instrument_done = false;
-	bool cut_off = false;
 
 	while((status = note_provider(arg, &note, &provider_done)) == 0 && !provider_done && !instrument_done) {
 
-		int rv = add_note(instrument, &note, &instrument_done, &cut_off);
-
+		int rv = add_note(instrument, &note, &instrument_done);
 		if(rv != 0) {
 			return rv;
-		}
-
-		if(cut_off) {
-			fputs("WARNING: Instrument buffer full, cutting off note.\n", stderr);
 		}
 	}
 
@@ -121,10 +135,6 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 
 	if(!instrument_done) {
 		return ERROR_CODE_BAR_TOO_SHORT;
-	}
-
-	if(!is_buffer_full(instrument)) {
-		fputs("WARNING: Instrument buffer not completely filled, making up with silence.\n", stderr);
 	}
 
 	if(!provider_done) {

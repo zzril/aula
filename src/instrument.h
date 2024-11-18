@@ -24,6 +24,7 @@ struct Instrument {
 	float* buffer;
 	size_t num_samples;
 	size_t buffer_position;
+	size_t granularity;
 };
 
 // --------

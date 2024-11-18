@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include <errno.h>
 #include <string.h>
 
 #include "error_codes.h"
@@ -10,7 +11,7 @@
 static int advance(AbstractLexer* lexer);
 static int peek(AbstractLexer* lexer);
 
-static bool verify_keyword(AbstractLexer* lexer, char* keyword);
+static bool verify_keyword(AbstractLexer* lexer, const char* keyword);
 
 static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token);
 
@@ -60,7 +61,7 @@ static int peek(AbstractLexer* lexer) {
 	return rv;
 }
 
-static bool verify_keyword(AbstractLexer* lexer, char* keyword) {
+static bool verify_keyword(AbstractLexer* lexer, const char* keyword) {
 
 	size_t index = 0;
 	size_t length = strlen(keyword);
@@ -106,6 +107,8 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 	while((c = advance(lexer)) != EOF) {
 
 		int status = 0;
+		long integer_literal = 0;
+		char* endptr = NULL;
 
 		switch(((Lexer*) lexer)->state) {
 
@@ -121,16 +124,45 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 					case '\t':
 						continue;
 
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_LITERAL_INTEGER;
+
+						continue;
+
+					case 'b':
+
+						if(verify_keyword(lexer, TOKEN_KEYWORDS[TOKEN_KEYWORD_BPM]) == false) {
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
+						}
+
+						Token_init_at(token, TOKEN_KEYWORD_BPM, lexer->saved_line, lexer->saved_col);
+
+						return 0;
+
 					case 't':
 
-						if(verify_keyword(lexer, "track:") == false) {
-							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						if(verify_keyword(lexer, TOKEN_KEYWORDS[TOKEN_KEYWORD_TRACK]) == false) {
+							return ERROR_CODE_UNEXPECTED_CHARACTER;
 						}
 
 						Token_init_at(token, TOKEN_KEYWORD_TRACK, lexer->saved_line, lexer->saved_col);
 
 						return 0;
-
 
 					case '|':
 
@@ -149,11 +181,87 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 
 					case '/':
 
-						if(advance(lexer) != (int) '/') {
-							return ERROR_CODE_UNEXPECTED_CHARACTER;
+						if(peek(lexer) != (int) '/') {
+							return ERROR_CODE_UNEXPECTED_FOLLOW_UP_CHARACTER;
+						}
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
 						}
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_COMMENT;
+
+						continue;
+
+					default:
+						lexer->error = true;
+						lexer->finished = true;
+						return ERROR_CODE_UNEXPECTED_CHARACTER;
+				}
+
+			case LEXER_STATE_EXPECTING_LITERAL_INTEGER:
+
+				switch(lexer->symbol) {
+
+					case ' ':
+					case '\n':
+					case '\r':
+					case '\t':
+
+						status = finalize_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
+
+						Token_init_at(token, TOKEN_LITERAL_INTEGER, lexer->saved_line, lexer->saved_col);
+
+						errno = 0;
+						integer_literal = strtol(lexer->buffer, &endptr, 10);
+
+						switch(errno) {
+
+							case 0:
+								break;
+
+							case ERANGE:
+								return ERROR_CODE_INTEGER_OVERFLOW;
+
+							default:
+								return ERROR_CODE_INVALID_STATE;
+						}
+
+						if(*endptr != '\0') {
+							return ERROR_CODE_INVALID_STATE;
+						}
+
+						token->content.integer = (int) integer_literal;
+
+						if((long) (token->content.integer) != integer_literal) {
+							return ERROR_CODE_INTEGER_OVERFLOW;
+						}
+
+						reset_buffer_info(lexer);
+
+						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
+
+						return 0;
+
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+
+						status = append_current_symbol_to_buffer(lexer);
+						if(status != 0) {
+							return status;
+						}
 
 						continue;
 
@@ -201,7 +309,10 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						}
 
 						Token_init_at(token, TOKEN_TRACK, lexer->saved_line, lexer->saved_col);
-						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						status = Token_set_content_buffer(token, lexer->buffer, lexer->buffer_length);
+						if(status != 0) {
+							return status;
+						}
 						reset_buffer_info(lexer);
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
@@ -225,7 +336,10 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						}
 
 						Token_init_at(token, TOKEN_COMMENT, lexer->saved_line, lexer->saved_col);
-						Token_set_content(token, lexer->buffer, lexer->buffer_length);
+						status = Token_set_content_buffer(token, lexer->buffer, lexer->buffer_length);
+						if(status != 0) {
+							return status;
+						}
 						reset_buffer_info(lexer);
 
 						((Lexer*) lexer)->state = LEXER_STATE_EXPECTING_NEW_TOKEN;
@@ -237,6 +351,7 @@ static int Lexer_get_next_token_internal(AbstractLexer* lexer, Token* token) {
 						if(status != 0) {
 							return status;
 						}
+						continue;
 				}
 
 			default:

@@ -46,6 +46,9 @@ To play a file, start the interpreter and give the filename as an argument:
 
 An aula file could currently look for example like this:  
 ```
+bpm: 40
+
+track:
 || D+ A B F# | G D G A ||
 ```
 

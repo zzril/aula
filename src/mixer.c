@@ -12,7 +12,7 @@
 
 int Mixer_init_at(Mixer* mixer) {
 
-	mixer->num_samples = SAMPLE_FRAMES_PER_BAR;
+	mixer->num_samples = Config_get_sample_frames_per_bar();
 
 	mixer->buffer = reallocarray(NULL, mixer->num_samples, sizeof(float));
 	if(mixer->buffer == NULL) {

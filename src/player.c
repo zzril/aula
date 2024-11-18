@@ -101,7 +101,7 @@ int Player_init_at(Player* player) {
 	memset(&desired, 0, sizeof(desired));
 	memset(&obtained, 0, sizeof(obtained));
 
-	desired.freq = SAMPLE_FRAMES_PER_SECOND;
+	desired.freq = Config_get_framerate();
 	desired.format = AUDIO_F32SYS;
 	desired.channels = 1;
 	desired.samples = pagesize / sizeof(float);
@@ -147,7 +147,7 @@ int Player_play_bar(Player* player) {
 	}
 
 	while(SDL_GetQueuedAudioSize(player->device) > 2 * ((player->mixer).num_samples) * sizeof(float)) {
-		sleep(BAR_LENGTH_IN_SECONDS);
+		sleep(Config_get_bar_length_in_seconds());
 	}
 
 	return 0;

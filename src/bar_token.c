@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "bar_token.h"
+#include "error_codes.h"
 
 // --------
 
@@ -32,5 +33,20 @@ void BarToken_destroy_at(BarToken* token) {
 	memset(token, 0, sizeof(BarToken));
 
 	return;
+}
+
+int BarToken_print(BarToken* token, FILE* stream) {
+
+	if(token == NULL || token->content == NULL || stream == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(token->content_length == 0) {
+		return 0;
+	}
+
+	fputs(token->content, stream);
+
+	return 0;
 }
 

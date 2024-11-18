@@ -3,19 +3,22 @@
 // --------
 
 #include <stddef.h>
+#include <stdint.h>
 
 // --------
 
-#define SAMPLE_FRAMES_PER_SECOND 48000
-#define BEATS_PER_MINUTE 72.0
-#define QUARTER_NOTES_PER_BAR 4
+uint64_t Config_get_framerate();
+float Config_get_bpm();
+uint8_t Config_get_quarter_notes_per_bar();
 
-#define BEATS_PER_SECOND (BEATS_PER_MINUTE / 60.0)
-#define QUARTER_NOTE_LENGTH_IN_SECONDS (1.0 / BEATS_PER_SECOND)
-#define BAR_LENGTH_IN_SECONDS ((unsigned int) (QUARTER_NOTES_PER_BAR * QUARTER_NOTE_LENGTH_IN_SECONDS))
-#define SAMPLE_FRAMES_PER_BAR ((size_t) (QUARTER_NOTES_PER_BAR * (SAMPLE_FRAMES_PER_SECOND / BEATS_PER_SECOND)))
+int Config_set_framerate(uint64_t sample_frames_per_second);
+int Config_set_bpm(float beats_per_minute);
+int Config_set_quarter_notes_per_bar(uint8_t quarter_notes_per_bar);
+
+float Config_get_quarter_note_length_in_seconds();
+unsigned int Config_get_bar_length_in_seconds();
+size_t Config_get_sample_frames_per_bar();
 
 // --------
 #endif
-
 

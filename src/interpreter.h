@@ -16,7 +16,8 @@ typedef struct Interpreter Interpreter;
 // --------
 
 typedef enum InterpreterState {
-	INTERPRETER_STATE_START = 0,
+	INTERPRETER_STATE_EXPECTING_KEYWORD = 0,
+	INTERPRETER_STATE_EXPECTING_TEMPO,
 	INTERPRETER_STATE_EXPECTING_TRACK,
 	NUM_INTERPRETER_STATES,
 } InterpreterState;

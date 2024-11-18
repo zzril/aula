@@ -41,6 +41,10 @@ float Note_get_absolute_length(const Note* note) {
 }
 
 size_t Note_get_length_in_samples(const Note* note) {
-	return (size_t) (SAMPLE_FRAMES_PER_BAR * Note_get_absolute_length(note));
+	return (size_t) (Config_get_sample_frames_per_bar() * Note_get_absolute_length(note));
+}
+
+size_t Note_get_granularity_in_samples(const Note* note) {
+	return Note_get_length_in_samples(note);
 }
 
