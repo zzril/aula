@@ -33,6 +33,8 @@ enum ErrorCodes {
 	ERROR_CODE_BAR_TOO_SHORT,
 	ERROR_CODE_BAR_TOO_LONG,
 
+	ERROR_CODE_CONFIG_WRITE_AFTER_READ,
+
 };
 
 // --------
