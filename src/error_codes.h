@@ -35,6 +35,8 @@ enum ErrorCodes {
 
 	ERROR_CODE_CONFIG_WRITE_AFTER_READ,
 
+	ERROR_CODE_NOTE_COMPILER_ERROR,
+
 };
 
 // --------

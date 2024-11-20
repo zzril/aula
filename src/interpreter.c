@@ -17,9 +17,9 @@
 static bool destroy_token(Token* token);
 static bool destroy_bar_token(BarToken* bar);
 
-static int play_track_token(const Interpreter* interpreter, Token* track);
+static int play_track_token(Interpreter* interpreter, Token* track);
 
-static int play_bar_token(const Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar);
+static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar);
 
 // --------
 
@@ -32,7 +32,7 @@ static bool destroy_bar_token(BarToken* bar) {
 	BarToken_destroy_at(bar);
 	return true;
 }
-static int play_track_token(const Interpreter* interpreter, Token* track) {
+static int play_track_token(Interpreter* interpreter, Token* track) {
 
 	if(track == NULL || track->type != TOKEN_TRACK) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -84,7 +84,7 @@ static int play_track_token(const Interpreter* interpreter, Token* track) {
 	return status;
 }
 
-static int play_bar_token(const Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar) {
+static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar) {
 
 	NoteCompiler compiler;
 	int status;
@@ -101,7 +101,21 @@ static int play_bar_token(const Interpreter* interpreter, Player* player, Instru
 	}
 
 	status = Instrument_add_notes_for_bar(instrument, &NoteCompiler_get_next_note, &compiler);
+
 	if(status != 0) {
+
+		switch(status) {
+
+			case ERROR_CODE_NOTE_COMPILER_ERROR:
+
+				if(NoteCompiler_print_error(&compiler, stderr) == 0) {
+					interpreter->printed_err_msg = true;
+				}
+				break;
+
+			default:
+				break;
+		}
 		return status;
 	}
 
@@ -122,6 +136,7 @@ void Interpreter_init_at(Interpreter* interpreter) {
 	interpreter->error_state = INTERPRETER_ERROR_STATE_UNKNOWN_ERROR;
 	interpreter->finished = false;
 	interpreter->error = false;
+	interpreter->printed_err_msg = false;
 
 	return;
 }
@@ -226,7 +241,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
-	if(interpreter->error) {
+	if(interpreter->error && !interpreter->printed_err_msg) {
 
 		switch(interpreter->error_state) {
 

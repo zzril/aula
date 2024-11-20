@@ -35,6 +35,7 @@ struct Interpreter {
 	InterpreterErrorState error_state;
 	bool finished;
 	bool error;
+	bool printed_err_msg;
 };
 
 // --------
