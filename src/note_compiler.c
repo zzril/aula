@@ -149,6 +149,7 @@ int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length, char*
 
 	compiler->bar = bar;
 	compiler->state = NOTE_COMPILER_STATE_EXPECTING_NOTE;
+	compiler->error_state = NOTE_COMPILER_ERROR_STATE_UNKNOWN_ERROR;
 	compiler->bar_length = 0;
 	compiler->position = 0;
 	compiler->symbol = '\0';
@@ -212,6 +213,7 @@ int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 					default:
 						comp->error = true;
 						comp->finished = true;
+						comp->error_state = NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER;
 						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 			default:

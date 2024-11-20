@@ -22,12 +22,18 @@ typedef enum NoteCompilerState {
 	NUM_NOTE_COMPILER_STATES,
 } NoteCompilerState;
 
+typedef enum NoteCompilerErrorState {
+	NOTE_COMPILER_ERROR_STATE_UNKNOWN_ERROR = 0,
+	NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER,
+} NoteCompilerErrorState;
+
 struct NoteCompiler {
 	char* filename;
 	char* bar;
-	NoteCompilerState state;
 	size_t bar_length;
 	size_t position;
+	NoteCompilerState state;
+	NoteCompilerErrorState error_state;
 	char symbol;
 	bool finished;
 	bool error;
