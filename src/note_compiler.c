@@ -145,7 +145,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 
 // --------
 
-int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
+int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length, char* filename) {
 
 	compiler->bar = bar;
 	compiler->state = NOTE_COMPILER_STATE_EXPECTING_NOTE;
@@ -157,6 +157,8 @@ int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
 
 	compiler->bar = bar;
 	compiler->bar_length = length;
+
+	compiler->filename = filename == NULL? "": filename;
 
 	return 0;
 }

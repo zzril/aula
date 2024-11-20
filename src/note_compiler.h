@@ -23,6 +23,7 @@ typedef enum NoteCompilerState {
 } NoteCompilerState;
 
 struct NoteCompiler {
+	char* filename;
 	char* bar;
 	NoteCompilerState state;
 	size_t bar_length;
@@ -34,7 +35,7 @@ struct NoteCompiler {
 
 // --------
 
-int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length);
+int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length, char* filename);
 
 int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished);
 

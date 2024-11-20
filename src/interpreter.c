@@ -17,9 +17,9 @@
 static bool destroy_token(Token* token);
 static bool destroy_bar_token(BarToken* bar);
 
-static int play_track_token(Token* track);
+static int play_track_token(const Interpreter* interpreter, Token* track);
 
-static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar);
+static int play_bar_token(const Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar);
 
 // --------
 
@@ -32,7 +32,7 @@ static bool destroy_bar_token(BarToken* bar) {
 	BarToken_destroy_at(bar);
 	return true;
 }
-static int play_track_token(Token* track) {
+static int play_track_token(const Interpreter* interpreter, Token* track) {
 
 	if(track == NULL || track->type != TOKEN_TRACK) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -69,7 +69,7 @@ static int play_track_token(Token* track) {
 	}
 
 	while(status == 0 && destroy_bar_token(&bar) && !lexer.super.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
-		status = play_bar_token(&player, &instrument, &bar);
+		status = play_bar_token(interpreter, &player, &instrument, &bar);
 	}
 
 	if(status == 0) {
@@ -84,7 +84,7 @@ static int play_track_token(Token* track) {
 	return status;
 }
 
-static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar) {
+static int play_bar_token(const Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar) {
 
 	NoteCompiler compiler;
 	int status;
@@ -95,7 +95,7 @@ static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar)
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	NoteCompiler_init_at(&compiler, (char*) (bar->content), bar->content_length);
+	NoteCompiler_init_at(&compiler, (char*) (bar->content), bar->content_length, interpreter->filename);
 
 	status = Instrument_add_notes_for_bar(instrument, &NoteCompiler_get_next_note, &compiler);
 	if(status != 0) {
@@ -194,7 +194,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 					case TOKEN_TRACK:
 
-						if((status = play_track_token(&token)) != 0) {
+						if((status = play_track_token(interpreter, &token)) != 0) {
 							interpreter->finished = true;
 							interpreter->error = true;
 							interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
