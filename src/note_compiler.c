@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <string.h>
@@ -228,5 +227,45 @@ int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 	}
 	comp->finished = true;
 	return 0;
+}
+
+int NoteCompiler_print_error(const NoteCompiler* compiler, FILE* stream) {
+
+	int status = 0;
+
+	if(compiler == NULL || !(compiler->error)) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(compiler->bar == NULL || compiler->bar->content == NULL) {
+		return ERROR_CODE_INVALID_STATE;
+	}
+
+	fprintf(stream, "%s:%u:%u: ", compiler->filename, compiler->bar->line, compiler->bar->col);
+
+	switch(compiler->error_state) {
+
+		case NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER:
+
+			fputs("Unexpected character:\n", stream);
+			BarToken_print(compiler->bar, stream);
+
+			if(fprintf(stream, "\n%*s^", (int) (compiler->position - 1), " ") < 0) {
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			break;
+
+		default:
+
+			fputs("Unknown error when reading bar:\n", stream);
+			BarToken_print(compiler->bar, stream);
+
+			break;
+	}
+
+	fputs("\n", stream);
+
+	return status;
 }
 

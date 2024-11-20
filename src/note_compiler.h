@@ -44,6 +44,8 @@ int NoteCompiler_init_at(NoteCompiler* compiler, BarToken* bar, char* filename);
 
 int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished);
 
+int NoteCompiler_print_error(const NoteCompiler* compiler, FILE* stream);
+
 // --------
 #endif
 
