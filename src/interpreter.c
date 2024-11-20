@@ -95,7 +95,10 @@ static int play_bar_token(const Interpreter* interpreter, Player* player, Instru
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	NoteCompiler_init_at(&compiler, (char*) (bar->content), bar->content_length, interpreter->filename);
+	status = NoteCompiler_init_at(&compiler, bar, interpreter->filename);
+	if(status != 0) {
+		return status;
+	}
 
 	status = Instrument_add_notes_for_bar(instrument, &NoteCompiler_get_next_note, &compiler);
 	if(status != 0) {
