@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "error_codes.h"
+#include "error_messages.h"
 #include "note_conversion.h"
 #include "note_compiler.h"
 
@@ -247,7 +248,9 @@ int NoteCompiler_print_error(const NoteCompiler* compiler, FILE* stream) {
 
 		case NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER:
 
-			fputs("Unexpected character:\n", stream);
+			fputs(get_error_message(ERROR_CODE_UNEXPECTED_CHARACTER), stream);
+			fputs(":\n", stream);
+
 			BarToken_print(compiler->bar, stream);
 
 			if(fprintf(stream, "\n%*s^", (int) (compiler->position - 1), " ") < 0) {
