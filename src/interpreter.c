@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "error_codes.h"
+#include "error_messages.h"
 #include "config.h"
 #include "instrument.h"
 #include "interpreter.h"
@@ -151,20 +152,8 @@ static int print_bar_length_error(const Interpreter* interpreter, FILE* stream, 
 
 	fprintf(stream, "%s:%u:%u: ", interpreter->filename, bar->line, bar->col);
 
-	switch(error_code) {
-
-		case ERROR_CODE_BAR_TOO_SHORT:
-			fputs("Bar too short:\n", stream);
-			break;
-
-		case ERROR_CODE_BAR_TOO_LONG:
-			fputs("Bar too long:\n", stream);
-			break;
-
-		default:
-			fputs("Bar length mismatch:\n", stream);
-			break;
-	}
+	fputs(get_error_message(error_code), stream);
+	fputs(":\n", stream);
 
 	status = BarToken_print(bar, stream);
 	fputs("\n", stream);
