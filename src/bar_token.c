@@ -35,7 +35,7 @@ void BarToken_destroy_at(BarToken* token) {
 	return;
 }
 
-int BarToken_print(BarToken* token, FILE* stream) {
+int BarToken_print(const BarToken* token, FILE* stream) {
 
 	if(token == NULL || token->content == NULL || stream == NULL) {
 		return ERROR_CODE_INVALID_ARGUMENT;

@@ -30,7 +30,7 @@ void BarToken_set_content(BarToken* token, char* content, size_t content_length)
 
 void BarToken_destroy_at(BarToken* token);
 
-int BarToken_print(BarToken* token, FILE* stream);
+int BarToken_print(const BarToken* token, FILE* stream);
 
 // --------
 #endif

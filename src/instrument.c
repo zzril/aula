@@ -130,7 +130,7 @@ int Instrument_add_notes_for_bar(Instrument* instrument, NoteProvider note_provi
 	}
 
 	if(status != 0) {
-		return status;
+		return ERROR_CODE_NOTE_COMPILER_ERROR;
 	}
 
 	if(!instrument_done) {
