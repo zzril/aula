@@ -21,6 +21,8 @@ static int play_track_token(Interpreter* interpreter, Token* track);
 
 static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar);
 
+static int print_bar_length_error(const Interpreter* interpreter, FILE* stream, const BarToken* bar, int error_code);
+
 // --------
 
 static bool destroy_token(Token* token) {
@@ -113,6 +115,14 @@ static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* 
 				}
 				break;
 
+			case ERROR_CODE_BAR_TOO_SHORT:
+			case ERROR_CODE_BAR_TOO_LONG:
+
+				if(print_bar_length_error(interpreter, stderr, bar, status) == 0) {
+					interpreter->printed_err_msg = true;
+				}
+				break;
+
 			default:
 				break;
 		}
@@ -125,6 +135,41 @@ static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* 
 	}
 
 	return Player_play_bar(player);
+}
+
+static int print_bar_length_error(const Interpreter* interpreter, FILE* stream, const BarToken* bar, int error_code) {
+
+	int status = 0;
+
+	if(interpreter == NULL || stream == NULL || bar == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(bar->content == NULL) {
+		return ERROR_CODE_INVALID_STATE;
+	}
+
+	fprintf(stream, "%s:%u:%u: ", interpreter->filename, bar->line, bar->col);
+
+	switch(error_code) {
+
+		case ERROR_CODE_BAR_TOO_SHORT:
+			fputs("Bar too short:\n", stream);
+			break;
+
+		case ERROR_CODE_BAR_TOO_LONG:
+			fputs("Bar too long:\n", stream);
+			break;
+
+		default:
+			fputs("Bar length mismatch:\n", stream);
+			break;
+	}
+
+	status = BarToken_print(bar, stream);
+	fputs("\n", stream);
+
+	return status;
 }
 
 // --------
