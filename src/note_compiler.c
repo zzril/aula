@@ -129,7 +129,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 	}
 
 	if(rest) {
-		Note_init_rest_at(note, length);
+		Note_init_rest_at(note, length, 0);
 		return 0;
 	}
 
@@ -138,7 +138,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		return status;
 	}
 
-	Note_init_at(note, pitch, length);
+	Note_init_at(note, pitch, length, 0);
 
 	return 0;
 }
