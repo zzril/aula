@@ -23,13 +23,14 @@ typedef struct Note Note;
 struct Note {
 	int8_t pitch;
 	int8_t length;
+	uint8_t dots;
 	bool is_rest;
 };
 
 // --------
 
-void Note_init_at(Note* note, int8_t pitch, int8_t length);
-void Note_init_rest_at(Note* note, int8_t length);
+void Note_init_at(Note* note, int8_t pitch, int8_t length, uint8_t dots);
+void Note_init_rest_at(Note* note, int8_t length, uint8_t dots);
 
 bool Note_is_rest(const Note* note);
 float Note_get_frequency(const Note* note);

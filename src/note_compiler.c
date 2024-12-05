@@ -50,7 +50,9 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 	int8_t half = 0;
 	int8_t pitch = 0;
 	int8_t length = -2;
-	bool frequence_parsing_finished = false;
+	uint8_t dots = 0;
+	bool finished_frequence_parsing = false;
+	bool finished_length_exponent_parsing = false;
 	bool note_finished = false;
 
 	char symbol = compiler->symbol;
@@ -87,7 +89,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 			}
 		}
 
-		while(!frequence_parsing_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+		while(!finished_frequence_parsing && !compiler->finished && (c = peek(compiler)) >= 0) {
 
 			switch(c) {
 
@@ -102,13 +104,13 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 					break;
 
 				default:
-					frequence_parsing_finished = true;
+					finished_frequence_parsing = true;
 					break;
 			}
 		}
 	}
 
-	while(!note_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+	while(!finished_length_exponent_parsing && !compiler->finished && (c = peek(compiler)) >= 0) {
 
 		switch(c) {
 
@@ -123,13 +125,28 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 				continue;
 
 			default:
+				finished_length_exponent_parsing = true;
+				break;
+		}
+	}
+
+	while(!note_finished && !compiler->finished && (c = peek(compiler)) >= 0) {
+
+		switch(c) {
+
+			case '.':
+				advance(compiler);
+				dots++;
+				continue;
+
+			default:
 				note_finished = true;
 				break;
 		}
 	}
 
 	if(rest) {
-		Note_init_rest_at(note, length);
+		Note_init_rest_at(note, length, dots);
 		return 0;
 	}
 
@@ -138,7 +155,7 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 		return status;
 	}
 
-	Note_init_at(note, pitch, length);
+	Note_init_at(note, pitch, length, dots);
 
 	return 0;
 }
