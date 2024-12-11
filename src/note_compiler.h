@@ -3,8 +3,8 @@
 // --------
 
 #include <stdbool.h>
-#include <stddef.h>
 
+#include "bar_token.h"
 #include "note.h"
 
 // --------
@@ -22,11 +22,17 @@ typedef enum NoteCompilerState {
 	NUM_NOTE_COMPILER_STATES,
 } NoteCompilerState;
 
+typedef enum NoteCompilerErrorState {
+	NOTE_COMPILER_ERROR_STATE_UNKNOWN_ERROR = 0,
+	NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER,
+} NoteCompilerErrorState;
+
 struct NoteCompiler {
-	char* bar;
-	NoteCompilerState state;
-	size_t bar_length;
+	char* filename;
+	BarToken* bar;
 	size_t position;
+	NoteCompilerState state;
+	NoteCompilerErrorState error_state;
 	char symbol;
 	bool finished;
 	bool error;
@@ -34,9 +40,11 @@ struct NoteCompiler {
 
 // --------
 
-int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length);
+int NoteCompiler_init_at(NoteCompiler* compiler, BarToken* bar, char* filename);
 
 int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished);
+
+int NoteCompiler_print_error(const NoteCompiler* compiler, FILE* stream);
 
 // --------
 #endif

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "error_codes.h"
+#include "error_messages.h"
 #include "config.h"
 #include "instrument.h"
 #include "interpreter.h"
@@ -17,9 +18,11 @@
 static bool destroy_token(Token* token);
 static bool destroy_bar_token(BarToken* bar);
 
-static int play_track_token(Token* track);
+static int play_track_token(Interpreter* interpreter, Token* track);
 
-static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar);
+static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar);
+
+static int print_bar_length_error(const Interpreter* interpreter, FILE* stream, const BarToken* bar, int error_code);
 
 // --------
 
@@ -32,7 +35,7 @@ static bool destroy_bar_token(BarToken* bar) {
 	BarToken_destroy_at(bar);
 	return true;
 }
-static int play_track_token(Token* track) {
+static int play_track_token(Interpreter* interpreter, Token* track) {
 
 	if(track == NULL || track->type != TOKEN_TRACK) {
 		return ERROR_CODE_INVALID_ARGUMENT;
@@ -69,7 +72,7 @@ static int play_track_token(Token* track) {
 	}
 
 	while(status == 0 && destroy_bar_token(&bar) && !lexer.super.finished && (status = TrackLexer_get_next_bar(&lexer, &bar)) == 0) {
-		status = play_bar_token(&player, &instrument, &bar);
+		status = play_bar_token(interpreter, &player, &instrument, &bar);
 	}
 
 	if(status == 0) {
@@ -84,7 +87,7 @@ static int play_track_token(Token* track) {
 	return status;
 }
 
-static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar) {
+static int play_bar_token(Interpreter* interpreter, Player* player, Instrument* instrument, BarToken* bar) {
 
 	NoteCompiler compiler;
 	int status;
@@ -95,10 +98,35 @@ static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar)
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
-	NoteCompiler_init_at(&compiler, (char*) (bar->content), bar->content_length);
+	status = NoteCompiler_init_at(&compiler, bar, interpreter->filename);
+	if(status != 0) {
+		return status;
+	}
 
 	status = Instrument_add_notes_for_bar(instrument, &NoteCompiler_get_next_note, &compiler);
+
 	if(status != 0) {
+
+		switch(status) {
+
+			case ERROR_CODE_NOTE_COMPILER_ERROR:
+
+				if(NoteCompiler_print_error(&compiler, stderr) == 0) {
+					interpreter->printed_err_msg = true;
+				}
+				break;
+
+			case ERROR_CODE_BAR_TOO_SHORT:
+			case ERROR_CODE_BAR_TOO_LONG:
+
+				if(print_bar_length_error(interpreter, stderr, bar, status) == 0) {
+					interpreter->printed_err_msg = true;
+				}
+				break;
+
+			default:
+				break;
+		}
 		return status;
 	}
 
@@ -110,6 +138,29 @@ static int play_bar_token(Player* player, Instrument* instrument, BarToken* bar)
 	return Player_play_bar(player);
 }
 
+static int print_bar_length_error(const Interpreter* interpreter, FILE* stream, const BarToken* bar, int error_code) {
+
+	int status = 0;
+
+	if(interpreter == NULL || stream == NULL || bar == NULL) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(bar->content == NULL) {
+		return ERROR_CODE_INVALID_STATE;
+	}
+
+	fprintf(stream, "%s:%u:%u: ", interpreter->filename, bar->line, bar->col);
+
+	fputs(get_error_message(error_code), stream);
+	fputs(":\n", stream);
+
+	status = BarToken_print(bar, stream);
+	fputs("\n", stream);
+
+	return status;
+}
+
 // --------
 
 void Interpreter_init_at(Interpreter* interpreter) {
@@ -119,6 +170,7 @@ void Interpreter_init_at(Interpreter* interpreter) {
 	interpreter->error_state = INTERPRETER_ERROR_STATE_UNKNOWN_ERROR;
 	interpreter->finished = false;
 	interpreter->error = false;
+	interpreter->printed_err_msg = false;
 
 	return;
 }
@@ -194,7 +246,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 
 					case TOKEN_TRACK:
 
-						if((status = play_track_token(&token)) != 0) {
+						if((status = play_track_token(interpreter, &token)) != 0) {
 							interpreter->finished = true;
 							interpreter->error = true;
 							interpreter->error_state = INTERPRETER_ERROR_STATE_INTERNAL_ERROR;
@@ -223,7 +275,7 @@ int Interpreter_interpret(Interpreter* interpreter, FILE* stream) {
 		status = status != 0? status: ERROR_CODE_UNKNOWN_ERROR;
 	}
 
-	if(interpreter->error) {
+	if(interpreter->error && !interpreter->printed_err_msg) {
 
 		switch(interpreter->error_state) {
 

@@ -164,20 +164,27 @@ static int TrackLexer_get_next_bar_internal(AbstractLexer* lexer, BarToken* toke
 
 int TrackLexer_init_at(TrackLexer* lexer, Token* track) {
 
-	int status = AbstractLexer_init_at((AbstractLexer*) lexer, 16);
+	AbstractLexer* super = (AbstractLexer*) lexer;
+
+	int status = AbstractLexer_init_at((AbstractLexer*) super, 16);
 	if(status != 0) {
 		return status;
 	}
 
 	if(track == NULL || track->type != TOKEN_TRACK || track->content.buffer == NULL) {
-		((AbstractLexer*) lexer)->error = true;
-		((AbstractLexer*) lexer)->finished = true;
+		super->error = true;
+		super->finished = true;
 		return ERROR_CODE_INVALID_ARGUMENT;
 	}
 
 	lexer->state = TRACK_LEXER_STATE_START;
 	lexer->track = track;
 	lexer->track_position = 0;
+
+	super->line = track->line;
+	super->col = track->col;
+
+	update_lineinfo(super);
 
 	return 0;
 }

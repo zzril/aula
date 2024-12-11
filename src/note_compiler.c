@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <string.h>
 
 #include "error_codes.h"
+#include "error_messages.h"
 #include "note_conversion.h"
 #include "note_compiler.h"
 
@@ -23,12 +23,12 @@ static int finish_note(NoteCompiler* compiler, Note* note);
 
 static int advance(NoteCompiler* compiler) {
 
-	if(compiler->position >= compiler->bar_length) {
+	if(compiler->position >= compiler->bar->content_length) {
 		compiler->finished = true;
 		return END_OF_BAR;
 	}
 
-	compiler->symbol = (compiler->bar)[compiler->position];
+	compiler->symbol = (compiler->bar->content)[compiler->position];
 	(compiler->position)++;
 
 	return (char) (compiler->symbol);
@@ -36,11 +36,11 @@ static int advance(NoteCompiler* compiler) {
 
 static int peek(NoteCompiler* compiler) {
 
-	if(compiler->position >= compiler->bar_length) {
+	if(compiler->position >= compiler->bar->content_length) {
 		return END_OF_BAR;
 	}
 
-	return (char) ((compiler->bar)[compiler->position]);
+	return (char) ((compiler->bar->content)[compiler->position]);
 }
 
 static int finish_note(NoteCompiler* compiler, Note* note) {
@@ -162,18 +162,21 @@ static int finish_note(NoteCompiler* compiler, Note* note) {
 
 // --------
 
-int NoteCompiler_init_at(NoteCompiler* compiler, char* bar, size_t length) {
+int NoteCompiler_init_at(NoteCompiler* compiler, BarToken* bar, char* filename) {
+
+	if(compiler == NULL || bar == NULL || bar->content == NULL || bar->content_length == 0) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
 
 	compiler->bar = bar;
-	compiler->state = NOTE_COMPILER_STATE_EXPECTING_NOTE;
-	compiler->bar_length = 0;
 	compiler->position = 0;
+	compiler->state = NOTE_COMPILER_STATE_EXPECTING_NOTE;
+	compiler->error_state = NOTE_COMPILER_ERROR_STATE_UNKNOWN_ERROR;
 	compiler->symbol = '\0';
 	compiler->finished = false;
 	compiler->error = false;
 
-	compiler->bar = bar;
-	compiler->bar_length = length;
+	compiler->filename = filename == NULL? "": filename;
 
 	return 0;
 }
@@ -227,6 +230,7 @@ int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 					default:
 						comp->error = true;
 						comp->finished = true;
+						comp->error_state = NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER;
 						return ERROR_CODE_UNEXPECTED_CHARACTER;
 				}
 			default:
@@ -241,5 +245,47 @@ int NoteCompiler_get_next_note(void* compiler, Note* note, bool* finished) {
 	}
 	comp->finished = true;
 	return 0;
+}
+
+int NoteCompiler_print_error(const NoteCompiler* compiler, FILE* stream) {
+
+	int status = 0;
+
+	if(compiler == NULL || !(compiler->error)) {
+		return ERROR_CODE_INVALID_ARGUMENT;
+	}
+
+	if(compiler->bar == NULL || compiler->bar->content == NULL) {
+		return ERROR_CODE_INVALID_STATE;
+	}
+
+	fprintf(stream, "%s:%u:%u: ", compiler->filename, compiler->bar->line, compiler->bar->col);
+
+	switch(compiler->error_state) {
+
+		case NOTE_COMPILER_ERROR_STATE_UNEXPECTED_CHARACTER:
+
+			fputs(get_error_message(ERROR_CODE_UNEXPECTED_CHARACTER), stream);
+			fputs(":\n", stream);
+
+			BarToken_print(compiler->bar, stream);
+
+			if(fprintf(stream, "\n%*s^", (int) (compiler->position - 1), " ") < 0) {
+				return ERROR_CODE_UNKNOWN_SYSTEM_ERROR;
+			}
+
+			break;
+
+		default:
+
+			fputs("Unknown error when reading bar:\n", stream);
+			BarToken_print(compiler->bar, stream);
+
+			break;
+	}
+
+	fputs("\n", stream);
+
+	return status;
 }
 
