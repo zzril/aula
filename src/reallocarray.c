@@ -24,25 +24,19 @@
 
 // --------
 
-#if defined __ANDROID_API__ && __ANDROID_API__ <= 29
-
-// --------
-
-#include <stdlib.h>
-
-#include <errno.h>
-
 #include "reallocarray.h"
 
 // --------
+
+#if defined __ANDROID_API__ && __ANDROID_API__ <= 29
+
+#include <errno.h>
 
 /*
  * This is sqrt(SIZE_MAX+1), as s1*s2 <= SIZE_MAX
  * if both s1 < MUL_NO_OVERFLOW and s2 < MUL_NO_OVERFLOW
  */
 #define MUL_NO_OVERFLOW	((size_t)1 << (sizeof(size_t) * 4))
-
-// --------
 
 void *
 reallocarray(void *optr, size_t nmemb, size_t size)
@@ -56,6 +50,4 @@ reallocarray(void *optr, size_t nmemb, size_t size)
 }
 
 #endif
-
-// --------
 
