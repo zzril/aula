@@ -6,6 +6,7 @@
 #include "config.h"
 #include "error_codes.h"
 #include "mixer.h"
+#include "reallocarray.h"
 #include "wave.h"
 
 // --------

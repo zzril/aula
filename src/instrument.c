@@ -7,6 +7,7 @@
 #include "config.h"
 #include "error_codes.h"
 #include "instrument.h"
+#include "reallocarray.h"
 #include "wave.h"
 
 // --------
