@@ -18,9 +18,8 @@
 // --------
 
 /*
- * Modified version intended for compilation with lower
- * versions of Android's bionic libc (e. g. inside Termux),
- * which don't come with a reallocarray implementation.
+ * Modified version intended only for compilation inside Termux
+ * (which uses Android API 24, which doesn't have reallocarray).
  */
 
 // --------
@@ -30,8 +29,6 @@
 // --------
 
 #if defined __ANDROID_API__ && __ANDROID_API__ <= 29
-
-#include <stdlib.h>
 
 #include <errno.h>
 
