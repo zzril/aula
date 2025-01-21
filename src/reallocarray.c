@@ -31,6 +31,8 @@
 
 #if defined __ANDROID_API__ && __ANDROID_API__ <= 29
 
+#include <stdlib.h>
+
 #include <errno.h>
 
 /*
